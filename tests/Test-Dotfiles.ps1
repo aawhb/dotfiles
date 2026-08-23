@@ -10,7 +10,7 @@ $forbidden = @(
     ('BW_' + 'SESSION='),
     ('ATUIN_' + 'SESSION')
 )
-$files = Get-ChildItem -LiteralPath $root -Recurse -File | Where-Object {
+$files = Get-ChildItem -LiteralPath $root -Recurse -File -Force | Where-Object {
     $_.FullName -notmatch '[\\/]\.git[\\/]'
 }
 foreach ($file in $files) {
@@ -25,7 +25,7 @@ foreach ($file in $files) {
     }
 }
 
-$powerShellFiles = Get-ChildItem -LiteralPath $root -Recurse -File -Filter '*.ps1'
+$powerShellFiles = Get-ChildItem -LiteralPath $root -Recurse -File -Filter '*.ps1' -Force
 foreach ($file in $powerShellFiles) {
     $tokens = $null
     $errors = $null

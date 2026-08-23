@@ -1,0 +1,5 @@
+[data]
+profile = "work"
+installShellTools = false
+gitName = "Test User"
+gitEmail = "test@example.com"
