@@ -1,0 +1,33 @@
+auto_sync = false
+update_check = false
+workspaces = true
+enter_accept = false
+filter_mode = "global"
+search_mode = "fuzzy"
+store_failed = true
+secrets_filter = true
+keymap_mode = "emacs"
+
+history_filter = [
+  '(?i)(password|passwd|secret|client[_-]?secret|api[_-]?key|access[_-]?token|token)\s*=',
+  '(?i)--?(password|passwd|secret|client[_-]?secret|api[_-]?key|access[_-]?token)(=|\s+)',
+  '(?i)Authorization\s*:',
+  '(?i)Bearer\s+[A-Za-z0-9._-]+',
+  '(?i)sas://',
+  'AKIA[0-9A-Z]{16}',
+  'ghp_[A-Za-z0-9]{36,}',
+]
+
+[search]
+shells = "auto"
+
+[dotfiles]
+enabled = false
+
+[daemon]
+enabled = false
+autostart = false
+
+[ai]
+enabled = false
+

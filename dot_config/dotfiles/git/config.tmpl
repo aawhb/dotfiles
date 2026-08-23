@@ -1,0 +1,17 @@
+[init]
+    defaultBranch = main
+[pull]
+    ff = only
+[fetch]
+    prune = true
+[core]
+    autocrlf = false
+{{- if eq .chezmoi.os "windows" }}
+    sshCommand = C:/Windows/System32/OpenSSH/ssh.exe
+{{- end }}
+{{- if and .gitName .gitEmail }}
+[user]
+    name = {{ .gitName }}
+    email = {{ .gitEmail }}
+{{- end }}
+

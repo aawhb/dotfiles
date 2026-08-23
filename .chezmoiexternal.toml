@@ -1,0 +1,36 @@
+{{- if and (eq .chezmoi.os "linux") .installShellTools }}
+[".local/share/blesh"]
+    type = "archive"
+    url = "https://github.com/akinomyoga/ble.sh/releases/download/v0.4.0-devel3/ble-0.4.0-devel3.tar.xz"
+    exact = true
+    stripComponents = 1
+    checksum.sha256 = "c8612ee612bc6b10dbfd6e85c6cbdfd7caf152a12d1f9de22ea0a9d735b3080c"
+
+[".local/bin/atuin"]
+    type = "archive-file"
+    url = "https://github.com/atuinsh/atuin/releases/download/v18.19.0/atuin-x86_64-unknown-linux-gnu.tar.gz"
+    path = "atuin-x86_64-unknown-linux-gnu/atuin"
+    executable = true
+    checksum.sha256 = "4d7559ada42407ee8ddc62349acf134dd297568d032c45a746a7aef8a6860648"
+
+[".local/bin/oh-my-posh"]
+    type = "file"
+    url = "https://github.com/JanDeDobbeleer/oh-my-posh/releases/download/v30.6.5/posh-linux-amd64"
+    executable = true
+    checksum.sha256 = "079febf68932744a6c8d05179a2798bca083613275eca6de41b1efe9c82e15c8"
+
+[".local/bin/zoxide"]
+    type = "archive-file"
+    url = "https://github.com/ajeetdsouza/zoxide/releases/download/v0.10.0/zoxide-0.10.0-x86_64-unknown-linux-musl.tar.gz"
+    path = "zoxide"
+    executable = true
+    checksum.sha256 = "2d93385b99f3e82cf2701609a1bffcad863fbeb75aa3fe7eb6be4d29be68b1ae"
+
+[".local/bin/just"]
+    type = "archive-file"
+    url = "https://github.com/casey/just/releases/download/1.58.0/just-1.58.0-x86_64-unknown-linux-musl.tar.gz"
+    path = "just"
+    executable = true
+    checksum.sha256 = "4a5cc2f53e6f0f8c59092a6cc38291eb729d46a7dd95d3ae582008881b84931d"
+{{- end }}
+

@@ -1,0 +1,9 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- $withoutBlock := .chezmoi.stdin | replaceAllRegex `(?ms)\r?\n?# BEGIN dotfiles includes\r?\n.*?# END dotfiles includes\r?\n?` "" -}}
+{{- $clean := $withoutBlock | trim -}}
+{{- if $clean }}{{ $clean }}
+
+{{ end -}}
+# BEGIN dotfiles includes
+Include ~/.ssh/config.d/*.conf
+# END dotfiles includes

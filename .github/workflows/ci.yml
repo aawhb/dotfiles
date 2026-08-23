@@ -1,0 +1,22 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - shell: pwsh
+        run: ./tests/Test-Dotfiles.ps1
+
+  linux:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash tests/test-dotfiles.sh

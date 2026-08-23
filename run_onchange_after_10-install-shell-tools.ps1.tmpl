@@ -1,0 +1,18 @@
+{{- if and (eq .chezmoi.os "windows") .installShellTools }}
+$ErrorActionPreference = 'Stop'
+$packages = @(
+    'JanDeDobbeleer.OhMyPosh',
+    'Atuinsh.Atuin',
+    'ajeetdsouza.zoxide',
+    'Casey.Just'
+)
+foreach ($package in $packages) {
+    winget install --id $package --exact --scope user `
+        --accept-package-agreements --accept-source-agreements `
+        --disable-interactivity
+    if ($LASTEXITCODE -ne 0) {
+        throw "Winget failed to reconcile $package."
+    }
+}
+{{- end }}
+

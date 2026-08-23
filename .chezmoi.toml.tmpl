@@ -1,0 +1,16 @@
+{{- $profile := promptChoiceOnce . "profile" "Device trust profile" (list "work" "personal") "work" -}}
+{{- $installShellTools := promptBoolOnce . "installShellTools" "Install optional shell tools" false -}}
+{{- $gitName := promptStringOnce . "gitName" "Git author name" -}}
+{{- $gitEmail := promptStringOnce . "gitEmail" "Git author email" -}}
+sourceDir = {{ .chezmoi.sourceDir | quote }}
+
+[data]
+    profile = {{ $profile | quote }}
+    installShellTools = {{ $installShellTools }}
+    gitName = {{ $gitName | quote }}
+    gitEmail = {{ $gitEmail | quote }}
+
+[git]
+    autoCommit = false
+    autoPush = false
+

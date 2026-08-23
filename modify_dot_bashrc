@@ -1,0 +1,9 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- $withoutBlock := .chezmoi.stdin | replaceAllRegex `(?ms)\r?\n?# BEGIN dotfiles shell\r?\n.*?# END dotfiles shell\r?\n?` "" -}}
+{{- $clean := $withoutBlock | trim -}}
+{{- if $clean }}{{ $clean }}
+
+{{ end -}}
+# BEGIN dotfiles shell
+[[ -r "$HOME/.config/dotfiles/bash/bashrc" ]] && source "$HOME/.config/dotfiles/bash/bashrc"
+# END dotfiles shell

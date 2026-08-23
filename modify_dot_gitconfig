@@ -1,0 +1,10 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- $withoutBlock := .chezmoi.stdin | replaceAllRegex `(?ms)\r?\n?# BEGIN dotfiles include\r?\n.*?# END dotfiles include\r?\n?` "" -}}
+{{- $clean := $withoutBlock | trim -}}
+{{- if $clean }}{{ $clean }}
+
+{{ end -}}
+# BEGIN dotfiles include
+[include]
+    path = ~/.config/dotfiles/git/config
+# END dotfiles include
