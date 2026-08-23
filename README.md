@@ -31,16 +31,45 @@ does not configure a sync address. A private downstream may add synchronization.
 
 ## Bootstrap
 
+### Prerequisites
+
+Windows requires Windows Package Manager and Git. Verify both before installing
+chezmoi:
+
+```powershell
+winget --version
+git --version
+```
+
+If Git is missing, install it and open a new PowerShell session so the updated
+`PATH` is available:
+
+```powershell
+winget install --id Git.Git --exact --source winget
+```
+
+Supported Debian and Ubuntu systems require CA certificates, curl, and Git:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y ca-certificates curl git
+```
+
+### Initialize
+
 Install chezmoi, then initialize this repository without applying anything:
 
 ```powershell
-winget install --id twpayne.chezmoi --exact --scope user
+winget install --id twpayne.chezmoi --exact --scope user --source winget
+chezmoi --version
 chezmoi init aawhb/dotfiles
 chezmoi diff
 ```
 
 ```bash
 sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin"
+export PATH="$HOME/.local/bin:$PATH"
+chezmoi --version
 chezmoi init aawhb/dotfiles
 chezmoi diff
 ```
