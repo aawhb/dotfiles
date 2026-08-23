@@ -59,6 +59,22 @@ chezmoi apply --verbose
 chezmoi verify
 ```
 
+Before the first live apply, capture every affected configuration target:
+
+```powershell
+pwsh -NoLogo -NoProfile -File scripts/Backup-Dotfiles.ps1
+pwsh -NoLogo -NoProfile -File scripts/Backup-Dotfiles.ps1 -Apply
+```
+
+```bash
+bash scripts/backup-dotfiles.sh
+bash scripts/backup-dotfiles.sh --apply
+```
+
+Each backup prints an exact preview and apply rollback command. Rollback restores
+configuration files without deleting tool binaries, history, keys, or application
+state.
+
 Authentication remains native to each tool. Use browser login for GitHub and
 Tailscale, generate SSH keys on each device, and do not add histories, tokens,
 sessions, private keys, or command databases to this repository.
@@ -97,4 +113,3 @@ bash tests/test-dotfiles.sh
 
 The tests validate shell syntax, PowerShell parsing, template safety, and the
 absence of known private infrastructure identifiers.
-

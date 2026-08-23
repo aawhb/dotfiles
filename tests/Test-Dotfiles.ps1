@@ -36,6 +36,17 @@ foreach ($file in $powerShellFiles) {
     }
 }
 
+foreach ($required in @(
+    'scripts\Backup-Dotfiles.ps1',
+    'scripts\Restore-Dotfiles.ps1',
+    'scripts\backup-dotfiles.sh',
+    'scripts\restore-dotfiles.sh'
+)) {
+    if (-not (Test-Path -LiteralPath (Join-Path $root $required) -PathType Leaf)) {
+        throw "Recovery helper is missing: $required"
+    }
+}
+
 $profile = Get-Content -LiteralPath (
     Join-Path $root 'dot_config\dotfiles\powershell\profile.ps1') -Raw
 foreach ($required in @(

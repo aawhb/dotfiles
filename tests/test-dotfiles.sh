@@ -4,6 +4,8 @@ set -euo pipefail
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 bash -n "$root/dot_config/dotfiles/bash/bashrc"
 bash -n "$root/dot_config/blesh/init.sh"
+bash -n "$root/scripts/backup-dotfiles.sh"
+bash -n "$root/scripts/restore-dotfiles.sh"
 
 if grep -RIl $'\u2014' "$root" --exclude-dir=.git | grep -q .; then
     echo "The source contains an em dash." >&2
