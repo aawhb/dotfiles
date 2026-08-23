@@ -1,18 +1,20 @@
 {{- if and (eq .chezmoi.os "windows") .installShellTools }}
 $ErrorActionPreference = 'Stop'
 $packages = @(
-    'JanDeDobbeleer.OhMyPosh',
-    'Atuinsh.Atuin',
-    'ajeetdsouza.zoxide',
-    'Casey.Just'
+    @{ Id = 'JanDeDobbeleer.OhMyPosh'; Command = 'oh-my-posh' },
+    @{ Id = 'Atuinsh.Atuin'; Command = 'atuin' },
+    @{ Id = 'ajeetdsouza.zoxide'; Command = 'zoxide' },
+    @{ Id = 'Casey.Just'; Command = 'just' }
 )
 foreach ($package in $packages) {
-    winget install --id $package --exact --scope user `
+    if (Get-Command $package.Command -ErrorAction SilentlyContinue) {
+        continue
+    }
+    winget install --id $package.Id --exact --scope user `
         --accept-package-agreements --accept-source-agreements `
         --disable-interactivity
     if ($LASTEXITCODE -ne 0) {
-        throw "Winget failed to reconcile $package."
+        throw "Winget failed to install $($package.Id)."
     }
 }
 {{- end }}
-
