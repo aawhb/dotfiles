@@ -7,6 +7,9 @@ bash -n "$root/dot_config/blesh/init.sh"
 bash -n "$root/scripts/backup-dotfiles.sh"
 bash -n "$root/scripts/restore-dotfiles.sh"
 
+test -f "$root/private_dot_ssh/modify_private_config"
+test -f "$root/private_dot_ssh/private_config.d/private_00-dotfiles.conf"
+
 if grep -RIl $'\u2014' "$root" --exclude-dir=.git | grep -q .; then
     echo "The source contains an em dash." >&2
     exit 1

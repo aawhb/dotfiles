@@ -62,7 +62,7 @@ foreach ($required in @(
 }
 
 $sshConfig = Get-Content -LiteralPath (
-    Join-Path $root 'dot_ssh\modify_config') -Raw
+    Join-Path $root 'private_dot_ssh\modify_private_config') -Raw
 if ($sshConfig -notmatch '(?m)^# BEGIN dotfiles includes\r?\nHost \*\r?\nInclude ') {
     throw 'The SSH include block must reset Host context before loading fragments.'
 }
