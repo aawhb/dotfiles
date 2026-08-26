@@ -1,0 +1,21 @@
+{{- if eq .chezmoi.os "windows" -}}
+{{- $windowsTools := list -}}
+{{- if hasKey . "windowsTools" -}}
+{{-   $windowsTools = .windowsTools -}}
+{{- else if and (hasKey . "installShellTools") .installShellTools -}}
+{{-   $windowsTools = list "oh-my-posh" "atuin" "zoxide" "just" -}}
+{{- end -}}
+@echo off
+setlocal
+rem installer-sha256: {{ include "scripts/Install-WindowsTools.ps1" | sha256sum }}
+set "DOTFILES_INSTALLER={{ joinPath .chezmoi.workingTree "scripts/Install-WindowsTools.ps1" }}"
+set "DOTFILES_TOOLS={{ join "," $windowsTools }}"
+
+where pwsh.exe >nul 2>nul
+if not errorlevel 1 (
+    pwsh.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%DOTFILES_INSTALLER%" -Tools "%DOTFILES_TOOLS%"
+) else (
+    powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%DOTFILES_INSTALLER%" -Tools "%DOTFILES_TOOLS%"
+)
+exit /b %ERRORLEVEL%
+{{- end }}

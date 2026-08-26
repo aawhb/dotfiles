@@ -5,8 +5,22 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+
+function Get-PowerShell7ProfilePath {
+    $pwsh = Get-Command pwsh -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($pwsh) {
+        $path = (& $pwsh.Source -NoLogo -NoProfile -Command '$PROFILE.CurrentUserCurrentHost' |
+            Select-Object -First 1).Trim()
+        if ($path) {
+            return $path
+        }
+    }
+    $documents = [Environment]::GetFolderPath('MyDocuments')
+    return Join-Path $documents 'PowerShell\Microsoft.PowerShell_profile.ps1'
+}
+
 $targets = @(
-    $PROFILE.CurrentUserCurrentHost,
+    (Get-PowerShell7ProfilePath),
     (Join-Path $HOME '.gitconfig'),
     (Join-Path $HOME '.ssh\config'),
     (Join-Path $HOME '.ssh\config.d\00-dotfiles.conf'),
@@ -51,6 +65,5 @@ $manifest | ConvertTo-Json -Depth 3 |
     Set-Content -LiteralPath (Join-Path $run 'manifest.json')
 
 "Backup: $run"
-"Rollback preview: pwsh -NoLogo -NoProfile -File scripts/Restore-Dotfiles.ps1 -RunPath '$run'"
-"Rollback apply: pwsh -NoLogo -NoProfile -File scripts/Restore-Dotfiles.ps1 -RunPath '$run' -Apply"
-
+"Rollback preview: powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File scripts/Restore-Dotfiles.ps1 -RunPath '$run'"
+"Rollback apply: powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File scripts/Restore-Dotfiles.ps1 -RunPath '$run' -Apply"

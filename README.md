@@ -22,6 +22,7 @@ adapter will not require a repository redesign.
 - PSReadLine inline history suggestions on PowerShell
 - ble.sh inline suggestions and completion on Bash
 - Atuin search with local-only history by default
+- optional standalone fzf on Windows
 - zoxide navigation
 - portable Git defaults and a per-device Git identity
 - an OpenSSH include directory without private hosts or keys
@@ -48,11 +49,12 @@ If Git is missing, install it and open a new PowerShell session so the updated
 winget install --id Git.Git --exact --source winget
 ```
 
-Supported Debian and Ubuntu systems require CA certificates, curl, and Git:
+Supported Debian and Ubuntu systems require CA certificates, curl, Git, and xz
+support:
 
 ```bash
 sudo apt-get update
-sudo apt-get install -y ca-certificates curl git
+sudo apt-get install -y ca-certificates curl git xz-utils
 ```
 
 ### Initialize
@@ -74,11 +76,30 @@ chezmoi init aawhb/dotfiles
 chezmoi diff
 ```
 
-During initialization, choose whether chezmoi should install the optional shell
-tools. Tool installation is off by default. On Windows, the opt-in installer uses
-Winget. On supported Linux systems, checksum-pinned upstream releases are
-installed under `~/.local/bin` because the required tools and versions are not
-consistently available from all supported distro repositories.
+During initialization, use the multi-select prompt to choose exactly which tools
+to install. Press Space to toggle an item and Enter to confirm the selection.
+Single-choice prompts, such as `work` versus `personal`, accept a matching key
+immediately; they are selectors rather than free-text fields.
+
+PowerShell 7 is the only default Windows selection. The remaining Windows
+choices are Oh My Posh, Atuin, zoxide, just, fzf, VS Code, Codex CLI, Obsidian,
+uv, Azure CLI, and NVM for Windows with Node.js LTS. Linux defaults to all five
+existing shell tools: ble.sh, Atuin, Oh My Posh, zoxide, and just. Re-run
+`chezmoi init --prompt` to change selections. Deselecting a tool prevents future
+install attempts but does not uninstall it.
+
+Windows installations use exact Winget package IDs and verify each CLI from a
+fresh PowerShell process. The installer refreshes environment variables and
+repairs the user `PATH` from known package locations when needed. NVM installs
+and activates Node.js LTS. Codex uses its Winget package first and falls back to
+`npm install --global @openai/codex` only when npm is already available. fzf is
+installed as a standalone command; Atuin keeps Ctrl-R and PSReadLine keeps inline
+history suggestions.
+
+Linux tools use the checksum-pinned upstream releases stored in this repository
+and install under `~/.local`. Both platform installers continue after an
+individual failure, print a complete summary, and then return a failure so the
+next `chezmoi apply` retries the incomplete setup.
 
 After reviewing the diff and listed scripts:
 
@@ -91,8 +112,8 @@ chezmoi verify
 Before the first live apply, capture every affected configuration target:
 
 ```powershell
-pwsh -NoLogo -NoProfile -File scripts/Backup-Dotfiles.ps1
-pwsh -NoLogo -NoProfile -File scripts/Backup-Dotfiles.ps1 -Apply
+powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File scripts/Backup-Dotfiles.ps1
+powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File scripts/Backup-Dotfiles.ps1 -Apply
 ```
 
 ```bash
@@ -117,10 +138,16 @@ chezmoi apply
 chezmoi cd
 ```
 
-The small loader in the PowerShell profile is installed by an idempotent chezmoi
-script because the Windows Documents Known Folder may be redirected to OneDrive.
-The substantive profile remains under `~/.config/dotfiles/powershell/profile.ps1`.
-Bash keeps the distro-owned `.bashrc` and adds only a marked source block.
+The Windows bootstrap can start in Windows PowerShell 5, but it re-enters under
+PowerShell 7 after installing or locating `pwsh`. Its execution-policy bypass is
+limited to that child process; CurrentUser and LocalMachine policy settings are
+not changed. The small profile loader is written only to the path reported by
+PowerShell 7, never to the Windows PowerShell 5 profile. This also handles a
+Documents Known Folder redirected to OneDrive. If PowerShell 7 is unselected and
+absent, application installs continue and profile activation is skipped. The
+substantive profile remains under
+`~/.config/dotfiles/powershell/profile.ps1`. Bash keeps the distro-owned
+`.bashrc` and adds only a marked source block.
 
 ## Public and private downstreams
 

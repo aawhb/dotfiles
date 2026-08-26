@@ -1,5 +1,6 @@
 [data]
 profile = "work"
-installShellTools = false
+windowsTools = ["powershell", "atuin", "codex", "nvm-node-lts"]
+linuxTools = []
 gitName = "Test User"
 gitEmail = "test@example.com"

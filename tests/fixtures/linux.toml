@@ -1,5 +1,6 @@
 [data]
 profile = "work"
-installShellTools = false
+windowsTools = []
+linuxTools = ["blesh", "atuin", "oh-my-posh", "zoxide", "just"]
 gitName = "Test User"
 gitEmail = "test@example.com"

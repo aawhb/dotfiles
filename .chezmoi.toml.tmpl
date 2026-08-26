@@ -1,16 +1,24 @@
 {{- $profile := promptChoiceOnce . "profile" "Device trust profile" (list "work" "personal") "work" -}}
-{{- $installShellTools := promptBoolOnce . "installShellTools" "Install optional shell tools" false -}}
+{{- $windowsChoices := list "powershell" "oh-my-posh" "atuin" "zoxide" "just" "fzf" "vscode" "codex" "obsidian" "uv" "azure-cli" "nvm-node-lts" -}}
+{{- $linuxChoices := list "blesh" "atuin" "oh-my-posh" "zoxide" "just" -}}
+{{- $windowsTools := list -}}
+{{- $linuxTools := list -}}
+{{- if eq .chezmoi.os "windows" -}}
+{{-   $windowsTools = promptMultichoiceOnce . "windowsTools" "Select Windows tools (space toggles, enter confirms)" $windowsChoices (list "powershell") -}}
+{{- else if eq .chezmoi.os "linux" -}}
+{{-   $linuxTools = promptMultichoiceOnce . "linuxTools" "Select Linux shell tools (space toggles, enter confirms)" $linuxChoices $linuxChoices -}}
+{{- end -}}
 {{- $gitName := promptStringOnce . "gitName" "Git author name" -}}
 {{- $gitEmail := promptStringOnce . "gitEmail" "Git author email" -}}
 sourceDir = {{ .chezmoi.sourceDir | quote }}
 
 [data]
     profile = {{ $profile | quote }}
-    installShellTools = {{ $installShellTools }}
+    windowsTools = {{ $windowsTools | toToml }}
+    linuxTools = {{ $linuxTools | toToml }}
     gitName = {{ $gitName | quote }}
     gitEmail = {{ $gitEmail | quote }}
 
 [git]
     autoCommit = false
     autoPush = false
-

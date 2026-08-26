@@ -7,6 +7,26 @@ bash -n "$root/dot_config/blesh/init.sh"
 bash -n "$root/scripts/backup-dotfiles.sh"
 bash -n "$root/scripts/restore-dotfiles.sh"
 
+rendered_linux_installer=$(mktemp)
+cleanup() {
+    rm -f -- "$rendered_linux_installer"
+}
+trap cleanup EXIT
+sed '/^{{.*}}$/d' "$root/run_onchange_after_10-install-linux-tools.sh.tmpl" \
+    > "$rendered_linux_installer"
+bash -n "$rendered_linux_installer"
+test "$(head -n 1 "$rendered_linux_installer")" = '#!/usr/bin/env bash'
+
+for checksum in $(grep -E '^[[:space:]]+[0-9a-f]{64} \\' \
+    "$root/run_onchange_after_10-install-linux-tools.sh.tmpl" | awk '{print $1}'); do
+    test ${#checksum} -eq 64
+done
+
+grep -Fq 'Linux tool setup summary' \
+    "$root/run_onchange_after_10-install-linux-tools.sh.tmpl"
+grep -Fq 'failures=$((failures + 1))' \
+    "$root/run_onchange_after_10-install-linux-tools.sh.tmpl"
+
 test -f "$root/private_dot_ssh/modify_private_config"
 test -f "$root/private_dot_ssh/private_config.d/private_00-dotfiles.conf"
 

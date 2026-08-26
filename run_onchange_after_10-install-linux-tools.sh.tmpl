@@ -1,0 +1,221 @@
+{{- if eq .chezmoi.os "linux" -}}
+{{- $linuxTools := list -}}
+{{- if hasKey . "linuxTools" -}}
+{{-   $linuxTools = .linuxTools -}}
+{{- else if and (hasKey . "installShellTools") .installShellTools -}}
+{{-   $linuxTools = list "blesh" "atuin" "oh-my-posh" "zoxide" "just" -}}
+{{- end -}}
+#!/usr/bin/env bash
+set -u
+
+if ! tmp_root=$(mktemp -d); then
+    printf 'Could not create a temporary installation directory.\n' >&2
+    exit 1
+fi
+results=()
+failures=0
+
+cleanup() {
+    rm -rf -- "$tmp_root"
+}
+trap cleanup EXIT
+
+record_result() {
+    local name=$1
+    local status=$2
+    local detail=$3
+    results+=("$name|$status|$detail")
+    if [[ $status == failed ]]; then
+        failures=$((failures + 1))
+    fi
+}
+
+download_and_verify() {
+    local url=$1
+    local checksum=$2
+    local destination=$3
+
+    curl --fail --location --silent --show-error "$url" --output "$destination" || return 1
+    printf '%s  %s\n' "$checksum" "$destination" | sha256sum --check --status
+}
+
+install_archive_binary() {
+    local name=$1
+    local version=$2
+    local url=$3
+    local checksum=$4
+    local binary_name=$5
+    local destination=$6
+    local archive=$tmp_root/$name.tar.gz
+    local extract_root=$tmp_root/$name-extract
+    local staged=$destination.new.$$
+    local source
+
+    if [[ -x $destination ]] && "$destination" --version 2>&1 | grep -Fq "$version"; then
+        record_result "$name" available "Version $version is already installed."
+        return
+    fi
+    mkdir -p "$extract_root"
+    if ! download_and_verify "$url" "$checksum" "$archive"; then
+        record_result "$name" failed 'Download or checksum verification failed.'
+        return
+    fi
+    if ! tar -xzf "$archive" -C "$extract_root"; then
+        record_result "$name" failed 'Archive extraction failed.'
+        return
+    fi
+    source=$(find "$extract_root" -type f -name "$binary_name" -print -quit)
+    if [[ -z $source ]]; then
+        record_result "$name" failed "Archive did not contain $binary_name."
+        return
+    fi
+    mkdir -p "$(dirname "$destination")"
+    if ! install -m 0755 "$source" "$staged"; then
+        record_result "$name" failed 'Could not install the verified binary.'
+        return
+    fi
+    if ! "$staged" --version > /dev/null 2>&1; then
+        rm -f -- "$staged"
+        record_result "$name" failed 'Installed binary did not pass its version check.'
+        return
+    fi
+    if ! mv -f -- "$staged" "$destination"; then
+        rm -f -- "$staged"
+        record_result "$name" failed 'Could not activate the verified binary.'
+        return
+    fi
+    record_result "$name" installed "Installed version $version."
+}
+
+install_file_binary() {
+    local name=$1
+    local version=$2
+    local url=$3
+    local checksum=$4
+    local destination=$5
+    local download=$tmp_root/$name
+    local staged=$destination.new.$$
+
+    if [[ -x $destination ]] && "$destination" version 2>&1 | grep -Fq "$version"; then
+        record_result "$name" available "Version $version is already installed."
+        return
+    fi
+    if ! download_and_verify "$url" "$checksum" "$download"; then
+        record_result "$name" failed 'Download or checksum verification failed.'
+        return
+    fi
+    mkdir -p "$(dirname "$destination")"
+    if ! install -m 0755 "$download" "$staged"; then
+        record_result "$name" failed 'Could not install the verified binary.'
+        return
+    fi
+    if ! "$staged" version > /dev/null 2>&1; then
+        rm -f -- "$staged"
+        record_result "$name" failed 'Installed binary did not pass its version check.'
+        return
+    fi
+    if ! mv -f -- "$staged" "$destination"; then
+        rm -f -- "$staged"
+        record_result "$name" failed 'Could not activate the verified binary.'
+        return
+    fi
+    record_result "$name" installed "Installed version $version."
+}
+
+install_blesh() {
+    local version=0.4.0-devel3
+    local url=https://github.com/akinomyoga/ble.sh/releases/download/v0.4.0-devel3/ble-0.4.0-devel3.tar.xz
+    local checksum=c8612ee612bc6b10dbfd6e85c6cbdfd7caf152a12d1f9de22ea0a9d735b3080c
+    local archive=$tmp_root/blesh.tar.xz
+    local extract_root=$tmp_root/blesh-extract
+    local source
+    local target=$HOME/.local/share/blesh
+    local candidate=$HOME/.local/share/blesh.new.$$
+    local backup=$HOME/.local/share/blesh.old.$$
+
+    if [[ -r $target/ble.sh ]] && grep -Fq "$version" "$target/ble.sh"; then
+        record_result blesh available "Version $version is already installed."
+        return
+    fi
+    mkdir -p "$extract_root"
+    if ! download_and_verify "$url" "$checksum" "$archive"; then
+        record_result blesh failed 'Download or checksum verification failed.'
+        return
+    fi
+    if ! tar -xJf "$archive" -C "$extract_root"; then
+        record_result blesh failed 'Archive extraction failed. Ensure xz support is installed.'
+        return
+    fi
+    source=$(find "$extract_root" -mindepth 1 -maxdepth 1 -type d -print -quit)
+    if [[ -z $source || ! -r $source/ble.sh ]]; then
+        record_result blesh failed 'Archive did not contain the expected ble.sh tree.'
+        return
+    fi
+    mkdir -p "$(dirname "$target")"
+    if ! mv "$source" "$candidate"; then
+        record_result blesh failed 'Could not stage the verified ble.sh tree.'
+        return
+    fi
+    if [[ -e $target ]] && ! mv "$target" "$backup"; then
+        rm -rf -- "$candidate"
+        record_result blesh failed 'Could not preserve the existing ble.sh tree.'
+        return
+    fi
+    if ! mv "$candidate" "$target"; then
+        if [[ -e $backup ]]; then
+            mv "$backup" "$target"
+        fi
+        rm -rf -- "$candidate"
+        record_result blesh failed 'Could not activate the new ble.sh tree.'
+        return
+    fi
+    if [[ -e $backup ]]; then
+        rm -rf -- "$backup"
+    fi
+    if [[ ! -r $target/ble.sh ]]; then
+        record_result blesh failed 'Installed ble.sh tree did not pass verification.'
+        return
+    fi
+    record_result blesh installed "Installed version $version."
+}
+
+{{- if has "blesh" $linuxTools }}
+install_blesh
+{{- end }}
+{{- if has "atuin" $linuxTools }}
+install_archive_binary atuin 18.19.0 \
+    https://github.com/atuinsh/atuin/releases/download/v18.19.0/atuin-x86_64-unknown-linux-gnu.tar.gz \
+    4d7559ada42407ee8ddc62349acf134dd297568d032c45a746a7aef8a6860648 \
+    atuin "$HOME/.local/bin/atuin"
+{{- end }}
+{{- if has "oh-my-posh" $linuxTools }}
+install_file_binary oh-my-posh 30.6.5 \
+    https://github.com/JanDeDobbeleer/oh-my-posh/releases/download/v30.6.5/posh-linux-amd64 \
+    079febf68932744a6c8d05179a2798bca083613275eca6de41b1efe9c82e15c8 \
+    "$HOME/.local/bin/oh-my-posh"
+{{- end }}
+{{- if has "zoxide" $linuxTools }}
+install_archive_binary zoxide 0.10.0 \
+    https://github.com/ajeetdsouza/zoxide/releases/download/v0.10.0/zoxide-0.10.0-x86_64-unknown-linux-musl.tar.gz \
+    2d93385b99f3e82cf2701609a1bffcad863fbeb75aa3fe7eb6be4d29be68b1ae \
+    zoxide "$HOME/.local/bin/zoxide"
+{{- end }}
+{{- if has "just" $linuxTools }}
+install_archive_binary just 1.58.0 \
+    https://github.com/casey/just/releases/download/1.58.0/just-1.58.0-x86_64-unknown-linux-musl.tar.gz \
+    4a5cc2f53e6f0f8c59092a6cc38291eb729d46a7dd95d3ae582008881b84931d \
+    just "$HOME/.local/bin/just"
+{{- end }}
+
+printf '\nLinux tool setup summary:\n'
+printf '%-20s %-10s %s\n' Tool Status Detail
+for result in "${results[@]}"; do
+    IFS='|' read -r name status detail <<< "$result"
+    printf '%-20s %-10s %s\n' "$name" "$status" "$detail"
+done
+
+if ((failures > 0)); then
+    printf '%d selected tool(s) failed.\n' "$failures" >&2
+    exit 1
+fi
+{{- end }}
