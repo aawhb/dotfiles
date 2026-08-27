@@ -112,27 +112,54 @@ chezmoi verify
 Before the first live apply, capture every affected configuration target:
 
 ```powershell
-powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File scripts/Backup-Dotfiles.ps1
-powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File scripts/Backup-Dotfiles.ps1 -Apply
+$sourceDir = chezmoi source-path
+& powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass `
+    -File (Join-Path $sourceDir 'scripts\Backup-Dotfiles.ps1')
+& powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass `
+    -File (Join-Path $sourceDir 'scripts\Backup-Dotfiles.ps1') -Apply
 ```
 
 ```bash
-bash scripts/backup-dotfiles.sh
-bash scripts/backup-dotfiles.sh --apply
+source_dir=$(chezmoi source-path)
+bash "$source_dir/scripts/backup-dotfiles.sh"
+bash "$source_dir/scripts/backup-dotfiles.sh" --apply
 ```
 
 Each backup prints an exact preview and apply rollback command. Rollback restores
 configuration files without deleting tool binaries, history, keys, or application
 state.
 
-Authentication remains native to each tool. Use browser login for GitHub and
-Tailscale, generate SSH keys on each device, and do not add histories, tokens,
+Authentication remains native to each tool. Use browser or CLI login where
+needed, generate SSH keys on each device, and do not add histories, tokens,
 sessions, private keys, or command databases to this repository.
+
+### Update an existing installation
+
+When the configuration prompts or data keys change, pull the source without
+applying it, regenerate the configuration, and review the result:
+
+```text
+chezmoi update --apply=false
+chezmoi init --prompt
+chezmoi diff
+```
+
+Run the backup commands above before accepting changes to managed targets, then
+apply explicitly:
+
+```text
+chezmoi apply --dry-run --verbose
+chezmoi apply --verbose
+chezmoi verify
+```
+
+Select every tool that should continue to be reconciled. Deselecting a tool
+stops future installation attempts but does not uninstall an existing tool.
 
 ## Daily workflow
 
 ```text
-chezmoi update
+chezmoi update --apply=false
 chezmoi diff
 chezmoi apply
 chezmoi cd

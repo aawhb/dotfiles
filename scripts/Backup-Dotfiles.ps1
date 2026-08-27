@@ -24,18 +24,10 @@ $targets = @(
     (Join-Path $HOME '.gitconfig'),
     (Join-Path $HOME '.ssh\config'),
     (Join-Path $HOME '.ssh\config.d\00-dotfiles.conf'),
-    (Join-Path $HOME '.ssh\config.d\20-platform-ops.conf'),
-    (Join-Path $HOME '.ssh\platform-ops_known_hosts'),
     (Join-Path $HOME '.config\atuin\config.toml'),
-    (Join-Path $HOME '.config\atuin\permissions.ai.toml'),
-    (Join-Path $HOME '.config\herdr\config.toml'),
     (Join-Path $HOME '.config\dotfiles\powershell\profile.ps1'),
     (Join-Path $HOME '.config\dotfiles\git\config'),
-    (Join-Path $HOME '.config\oh-my-posh\emodipt-extend.omp.json'),
-    (Join-Path $HOME '.codex\AGENTS.md'),
-    (Join-Path $HOME '.codex\config.toml'),
-    (Join-Path $HOME '.local\bin\Connect-AawhbAtuin.ps1'),
-    (Join-Path $HOME '.local\bin\herdr.cmd')
+    (Join-Path $HOME '.config\oh-my-posh\emodipt-extend.omp.json')
 ) | Select-Object -Unique
 
 'Dotfiles backup preview:'

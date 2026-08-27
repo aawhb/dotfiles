@@ -6,6 +6,8 @@ $forbidden = @(
     ('tail' + '0058b1'),
     ('dev-' + '01'),
     ('vault-' + '01'),
+    ('platform-' + 'ops'),
+    ('install' + 'ShellTools'),
     ('BEGIN OPENSSH ' + 'PRIVATE KEY'),
     ('BW_' + 'SESSION='),
     ('ATUIN_' + 'SESSION')
@@ -141,6 +143,44 @@ if (-not $backupScript.Contains("PowerShell\Microsoft.PowerShell_profile.ps1")) 
 }
 if ($backupScript.Contains('WindowsPowerShell')) {
     throw 'Windows backup must not target the Windows PowerShell 5 profile.'
+}
+foreach ($privateTarget in @(
+    'permissions.ai.toml',
+    '.config\herdr',
+    '.codex\AGENTS.md',
+    '.codex\config.toml',
+    'Connect-AawhbAtuin.ps1',
+    'herdr.cmd'
+)) {
+    if ($backupScript.Contains($privateTarget)) {
+        throw "Public Windows backup contains a private target: $privateTarget"
+    }
+}
+
+$bashBackup = Get-Content -LiteralPath (
+    Join-Path $root 'scripts\backup-dotfiles.sh') -Raw
+foreach ($privateTarget in @(
+    'permissions.ai.toml',
+    '.config/herdr',
+    '.codex/AGENTS.md',
+    '.codex/config.toml',
+    'connect-aawhb-atuin'
+)) {
+    if ($bashBackup.Contains($privateTarget)) {
+        throw "Public Bash backup contains a private target: $privateTarget"
+    }
+}
+
+$workflow = Get-Content -LiteralPath (
+    Join-Path $root '.github\workflows\ci.yml') -Raw
+foreach ($required in @(
+    'https://get.chezmoi.io/ps1',
+    '.chezmoiversion',
+    'GITHUB_PATH'
+)) {
+    if (-not $workflow.Contains($required)) {
+        throw "Windows CI does not provision chezmoi correctly: $required"
+    }
 }
 
 $profile = Get-Content -LiteralPath (

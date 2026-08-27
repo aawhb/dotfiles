@@ -21,17 +21,10 @@ targets=(
     "$HOME/.gitconfig"
     "$HOME/.ssh/config"
     "$HOME/.ssh/config.d/00-dotfiles.conf"
-    "$HOME/.ssh/config.d/20-platform-ops.conf"
-    "$HOME/.ssh/platform-ops_known_hosts"
     "$HOME/.config/atuin/config.toml"
-    "$HOME/.config/atuin/permissions.ai.toml"
-    "$HOME/.config/herdr/config.toml"
     "$HOME/.config/dotfiles/bash/bashrc"
     "$HOME/.config/dotfiles/git/config"
     "$HOME/.config/oh-my-posh/emodipt-extend.omp.json"
-    "$HOME/.codex/AGENTS.md"
-    "$HOME/.codex/config.toml"
-    "$HOME/.local/bin/connect-aawhb-atuin"
 )
 
 echo "Dotfiles backup preview:"
@@ -54,4 +47,3 @@ done
 echo "Backup: $run"
 echo "Rollback preview: bash scripts/restore-dotfiles.sh '$run'"
 echo "Rollback apply: bash scripts/restore-dotfiles.sh '$run' --apply"
-

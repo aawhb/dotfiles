@@ -36,7 +36,7 @@ if grep -RIl $'\xE2\x80\x94' "$root" --exclude-dir=.git | grep -q .; then
 fi
 
 for forbidden in "e-""xist" "tail""0058b1" "dev-""01" "vault-""01" \
-    "BEGIN OPENSSH ""PRIVATE KEY"; do
+    "platform-""ops" "install""ShellTools" "BEGIN OPENSSH ""PRIVATE KEY"; do
     if grep -RIl --exclude-dir=.git "$forbidden" "$root" | grep -q .; then
         echo "Public source contains forbidden private text: $forbidden" >&2
         exit 1

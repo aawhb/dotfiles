@@ -12,6 +12,15 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Install chezmoi
+        shell: pwsh
+        run: |
+          $version = (Get-Content -LiteralPath .chezmoiversion -Raw).Trim()
+          $binDir = Join-Path $env:RUNNER_TEMP 'chezmoi-bin'
+          $installer = [scriptblock]::Create(
+            (Invoke-RestMethod -Uri 'https://get.chezmoi.io/ps1'))
+          & $installer -BinDir $binDir -Tag "v$version"
+          $binDir | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
       - shell: pwsh
         run: ./tests/Test-Dotfiles.ps1
 
