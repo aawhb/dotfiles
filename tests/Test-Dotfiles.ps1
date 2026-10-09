@@ -49,17 +49,27 @@ foreach ($required in @(
         throw "Recovery helper is missing: $required"
     }
 }
-
 $configTemplate = Get-Content -LiteralPath (Join-Path $root '.chezmoi.toml.tmpl') -Raw
 foreach ($required in @(
     'promptMultichoiceOnce',
     'windowsTools',
     'linuxTools',
-    'nvm-node-lts'
+    'nvm-node-lts',
+    'herdr',
+    'github-cli',
+    'bitwarden-cli',
+    'tailscale'
 )) {
     if (-not $configTemplate.Contains($required)) {
         throw "Chezmoi config template is missing: $required"
     }
+}
+if (-not $configTemplate.Contains('$windowsChoices (list "powershell")')) {
+    throw 'Windows optional tools must remain unselected by default.'
+}
+if (-not $configTemplate.Contains(
+    '$linuxDefaults := list "blesh" "atuin" "oh-my-posh" "zoxide" "just"')) {
+    throw 'Linux optional tools must remain unselected by default.'
 }
 
 $windowsInstaller = Get-Content -LiteralPath (
@@ -77,6 +87,10 @@ foreach ($required in @(
     "'astral-sh.uv'",
     "'Microsoft.AzureCLI'",
     "'CoreyButler.NVMforWindows'",
+    "'Herdr.Herdr.Preview'",
+    "'GitHub.cli'",
+    "'Bitwarden.CLI'",
+    "'Tailscale.Tailscale'",
     'nvm install lts',
     'npm install --global',
     'Windows tool setup summary',
@@ -103,7 +117,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 foreach ($required in @(
     '-ExecutionPolicy Bypass',
-    'powershell,atuin,codex,nvm-node-lts',
+    'powershell,atuin,codex,nvm-node-lts,herdr,github-cli,bitwarden-cli,tailscale',
     'scripts\Install-WindowsTools.ps1'
 )) {
     if (-not (($renderedWrapper -join "`n").Contains($required))) {
@@ -129,11 +143,18 @@ foreach ($required in @(
     'install_file_binary oh-my-posh',
     'install_archive_binary zoxide',
     'install_archive_binary just',
+    'install_file_binary herdr 0.9.1',
+    'install_zip_binary bitwarden-cli 2026.7.0',
+    'install_tailscale',
+    'https://tailscale.com/install.sh',
     'Linux tool setup summary'
 )) {
     if (-not $renderedLinuxText.Contains($required)) {
         throw "Rendered Linux installer is missing: $required"
     }
+}
+if ($renderedLinuxText -match '(?m)^[\t ]*(sudo[\t ]+)?tailscale[\t ]+up') {
+    throw 'Linux tool installer must not enroll Tailscale automatically.'
 }
 
 $backupScript = Get-Content -LiteralPath (

@@ -1,6 +1,6 @@
 [data]
 profile = "work"
 windowsTools = []
-linuxTools = ["blesh", "atuin", "oh-my-posh", "zoxide", "just"]
+linuxTools = ["blesh", "atuin", "oh-my-posh", "zoxide", "just", "herdr", "bitwarden-cli", "tailscale"]
 gitName = "Test User"
 gitEmail = "test@example.com"

@@ -278,6 +278,22 @@ $definitions = @{
         Label = 'NVM and Node.js LTS'; Id = 'CoreyButler.NVMforWindows'; Command = 'nvm'
         Arguments = @('version'); Prefix = 'CoreyButler.NVMforWindows_'
     }
+    'herdr' = @{
+        Label = 'Herdr'; Id = 'Herdr.Herdr.Preview'; Command = 'herdr'
+        Arguments = @('--version'); Prefix = 'Herdr.Herdr.Preview_'
+    }
+    'github-cli' = @{
+        Label = 'GitHub CLI'; Id = 'GitHub.cli'; Command = 'gh'
+        Arguments = @('--version'); Prefix = 'GitHub.cli_'
+    }
+    'bitwarden-cli' = @{
+        Label = 'Bitwarden CLI'; Id = 'Bitwarden.CLI'; Command = 'bw'
+        Arguments = @('--version'); Prefix = 'Bitwarden.CLI_'
+    }
+    'tailscale' = @{
+        Label = 'Tailscale'; Id = 'Tailscale.Tailscale'; Command = 'tailscale'
+        Arguments = @('version'); Prefix = 'Tailscale.Tailscale_'
+    }
 }
 
 function Test-Tool {
@@ -286,7 +302,7 @@ function Test-Tool {
     if ($Key -eq 'powershell') {
         return Test-PowerShell7
     }
-    if ($Key -eq 'obsidian') {
+    if ($Key -in @('obsidian', 'herdr')) {
         return Test-WingetPackage -Id $definitions[$Key].Id
     }
     if ($Key -eq 'nvm-node-lts') {
@@ -484,7 +500,8 @@ if ($PSVersionTable.PSEdition -ne 'Core' -and 'powershell' -in $selectedTools) {
 
 $installOrder = @(
     'powershell', 'nvm-node-lts', 'oh-my-posh', 'atuin', 'zoxide', 'just',
-    'fzf', 'vscode', 'obsidian', 'uv', 'azure-cli', 'codex'
+    'fzf', 'vscode', 'obsidian', 'uv', 'azure-cli', 'codex', 'herdr',
+    'github-cli', 'bitwarden-cli', 'tailscale'
 )
 foreach ($key in $installOrder) {
     if ($key -notin $selectedTools) {

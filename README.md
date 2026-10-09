@@ -54,7 +54,7 @@ support:
 
 ```bash
 sudo apt-get update
-sudo apt-get install -y ca-certificates curl git xz-utils
+sudo apt-get install -y ca-certificates curl git unzip xz-utils
 ```
 
 ### Initialize
@@ -83,10 +83,11 @@ immediately; they are selectors rather than free-text fields.
 
 PowerShell 7 is the only default Windows selection. The remaining Windows
 choices are Oh My Posh, Atuin, zoxide, just, fzf, VS Code, Codex CLI, Obsidian,
-uv, Azure CLI, and NVM for Windows with Node.js LTS. Linux defaults to all five
-existing shell tools: ble.sh, Atuin, Oh My Posh, zoxide, and just. Re-run
-`chezmoi init --prompt` to change selections. Deselecting a tool prevents future
-install attempts but does not uninstall it.
+uv, Azure CLI, NVM for Windows with Node.js LTS, Herdr, GitHub CLI, Bitwarden
+CLI, and Tailscale. Linux defaults to the five shell tools ble.sh, Atuin, Oh My
+Posh, zoxide, and just. Herdr, Bitwarden CLI, and Tailscale are additional
+opt-in choices. Re-run `chezmoi init --prompt` to change selections. Deselecting
+a tool prevents future install attempts but does not uninstall it.
 
 Windows installations use exact Winget package IDs and verify each CLI from a
 fresh PowerShell process. The installer refreshes environment variables and
@@ -95,6 +96,20 @@ and activates Node.js LTS. Codex uses its Winget package first and falls back to
 `npm install --global @openai/codex` only when npm is already available. fzf is
 installed as a standalone command; Atuin keeps Ctrl-R and PSReadLine keeps inline
 history suggestions.
+
+Herdr uses the official `Herdr.Herdr.Preview` Winget package on Windows and a
+checksum-verified stable release on Linux. Update the Windows package with:
+
+```powershell
+winget upgrade --id Herdr.Herdr.Preview --exact --source winget
+```
+
+Do not run `herdr update` for the Winget installation. That command is for
+Herdr's direct installer and creates a separate standalone installation.
+
+Bitwarden CLI and Tailscale install only their generic clients. The installer
+does not authenticate Bitwarden or enroll the machine in a Tailnet. On Linux,
+Tailscale uses its official system-package installer and may prompt for `sudo`.
 
 Linux tools use the checksum-pinned upstream releases stored in this repository
 and install under `~/.local`. Both platform installers continue after an
@@ -155,6 +170,25 @@ chezmoi verify
 
 Select every tool that should continue to be reconciled. Deselecting a tool
 stops future installation attempts but does not uninstall an existing tool.
+
+## Herdr remote sessions
+
+Check which CLI will run before starting or updating Herdr. In PowerShell,
+`Get-Command herdr -All` lists available binaries and `herdr status --json`
+reports Herdr's local status. On Linux, `command -v herdr` shows the binary
+selected by `PATH`. Update a package-managed install through its package owner,
+such as Winget or the Linux distribution package manager. Use `herdr update`
+only for Herdr's direct standalone installer. A user-local binary at
+`~/.local/bin/herdr` can coexist with a distro-owned Herdr without replacing
+it; `PATH` selects the shell's active binary. Herdr's saved-machine discovery
+also caches a compatible remote executable, so a remote profile can use the
+sidecar even when `command -v herdr` resolves the distro binary.
+
+Register an SSH target with
+`herdr machine add <ssh-alias> --remote-session <name>`. Named sessions share
+Herdr's global configuration. The machine registry and cache stay on the
+client; remote session records stay on the remote host. Keep those records out
+of a dotfiles repository.
 
 ## Daily workflow
 
