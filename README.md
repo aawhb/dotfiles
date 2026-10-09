@@ -62,7 +62,7 @@ sudo apt-get install -y ca-certificates curl git unzip xz-utils
 Install chezmoi, then initialize this repository without applying anything:
 
 ```powershell
-winget install --id twpayne.chezmoi --exact --scope user --source winget
+winget install --id twpayne.chezmoi --exact --source winget
 chezmoi --version
 chezmoi init aawhb/dotfiles
 chezmoi diff
@@ -81,7 +81,10 @@ to install. Press Space to toggle an item and Enter to confirm the selection.
 Single-choice prompts, such as `work` versus `personal`, accept a matching key
 immediately; they are selectors rather than free-text fields.
 
-PowerShell 7 is the only default Windows selection. The remaining Windows
+PowerShell 7 is the only default Windows selection. If a managed PowerShell 7 is
+already available, the installer uses it instead of reinstalling or changing its
+scope. Git is a machine prerequisite and is not installed or managed by this
+repository. The remaining Windows
 choices are Oh My Posh, Atuin, zoxide, just, fzf, VS Code, Codex CLI, Obsidian,
 uv, Azure CLI, NVM for Windows with Node.js LTS, Herdr, GitHub CLI, Bitwarden
 CLI, and Tailscale. Linux defaults to the five shell tools ble.sh, Atuin, Oh My
@@ -107,9 +110,11 @@ winget upgrade --id Herdr.Herdr.Preview --exact --source winget
 Do not run `herdr update` for the Winget installation. That command is for
 Herdr's direct installer and creates a separate standalone installation.
 
-Bitwarden CLI and Tailscale install only their generic clients. The installer
-does not authenticate Bitwarden or enroll the machine in a Tailnet. On Linux,
-Tailscale uses its official system-package installer and may prompt for `sudo`.
+Bitwarden CLI and Tailscale install only their generic clients when selected.
+The installer does not authenticate Bitwarden or enroll the machine in a
+Tailnet. Tailscale is opt-in on Linux, where its official system-package
+installer may prompt for `sudo`. Managed lab hosts should use the lab's machine
+configuration for Tailscale; dotfiles selection supports standalone machines.
 
 Linux tools use the checksum-pinned upstream releases stored in this repository
 and install under `~/.local`. Both platform installers continue after an
@@ -200,7 +205,8 @@ chezmoi cd
 ```
 
 The Windows bootstrap can start in Windows PowerShell 5, but it re-enters under
-PowerShell 7 after installing or locating `pwsh`. Its execution-policy bypass is
+PowerShell 7 after locating an existing `pwsh` or installing the selected
+PowerShell 7 package. Its execution-policy bypass is
 limited to that child process; CurrentUser and LocalMachine policy settings are
 not changed. The small profile loader is written only to the path reported by
 PowerShell 7, never to the Windows PowerShell 5 profile. This also handles a

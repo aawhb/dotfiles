@@ -446,12 +446,6 @@ if (Test-Path -LiteralPath $managedProfile -PathType Leaf) {
             return New-InstallResult -Tool 'PowerShell 7 profile' -Status 'available' `
                 -Detail $targetProfile
         }
-        if ($current) {
-            $backupRoot = Join-Path $HOME '.local\state\dotfiles\backups'
-            $backup = Join-Path $backupRoot (Get-Date -Format 'yyyyMMdd-HHmmss')
-            New-Item -ItemType Directory -Path $backup -Force | Out-Null
-            Copy-Item -LiteralPath $targetProfile -Destination $backup
-        }
         New-Item -ItemType Directory -Path (Split-Path -Parent $targetProfile) -Force |
             Out-Null
         Set-Content -LiteralPath $targetProfile -Value $loader -NoNewline -Encoding UTF8

@@ -107,6 +107,9 @@ if ($windowsInstaller.Contains('Set-ExecutionPolicy')) {
 if ($windowsInstaller.Contains('--scope user')) {
     throw 'Windows installer must let Winget choose the applicable scope.'
 }
+if ($windowsInstaller.Contains(".local\state\dotfiles\backups")) {
+    throw 'The Windows installer must not accumulate profile-loader backups.'
+}
 
 $wrapperPath = Join-Path $root 'run_onchange_after_10-install-windows-tools.cmd.tmpl'
 $renderedWrapper = & chezmoi execute-template --source $root `
