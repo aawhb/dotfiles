@@ -111,6 +111,62 @@ if ($windowsInstaller.Contains(".local\state\dotfiles\backups")) {
     throw 'The Windows installer must not accumulate profile-loader backups.'
 }
 
+$installerAst = [Management.Automation.Language.Parser]::ParseFile(
+    (Join-Path $root 'scripts\Install-WindowsTools.ps1'), [ref]$tokens, [ref]$errors)
+$mergeFunctionAst = $installerAst.Find({
+    param($node)
+    $node -is [Management.Automation.Language.FunctionDefinitionAst] -and
+    $node.Name -eq 'Merge-PowerShellProfileLoader'
+}, $true)
+if (-not $mergeFunctionAst) {
+    throw 'The Windows installer is missing its profile loader merge function.'
+}
+. ([scriptblock]::Create($mergeFunctionAst.Extent.Text))
+
+$testLoader = @(
+    '# BEGIN dotfiles loader',
+    '$managedProfile = "managed profile"',
+    '# END dotfiles loader'
+) -join "`n"
+$expectedTestLoader = $testLoader -replace "`r`n|`n|`r", "`r`n"
+$profileBefore = "Personal setup before`r`n"
+$profileAfter = "`r`nPersonal setup after`r`n"
+$profileWithLoader = $profileBefore +
+    "# BEGIN dotfiles loader`r`nOld loader`r`n# END dotfiles loader" +
+    $profileAfter
+$mergedProfile = Merge-PowerShellProfileLoader `
+    -CurrentProfile $profileWithLoader -Loader $testLoader
+$expectedProfile = $profileBefore + $expectedTestLoader + $profileAfter
+if ($mergedProfile -cne $expectedProfile) {
+    throw 'Updating the PowerShell loader did not preserve surrounding profile text.'
+}
+$appendedProfile = Merge-PowerShellProfileLoader `
+    -CurrentProfile "Personal setup before`r`n" -Loader $testLoader
+if ($appendedProfile -cne "Personal setup before`r`n$expectedTestLoader") {
+    throw 'The PowerShell loader was not appended after existing profile text.'
+}
+if ((Merge-PowerShellProfileLoader -CurrentProfile $appendedProfile `
+        -Loader $testLoader) -cne $appendedProfile) {
+    throw 'The PowerShell loader merge is not idempotent.'
+}
+foreach ($malformedProfile in @(
+    "# BEGIN dotfiles loader`nUnpaired marker",
+    "# END dotfiles loader`nUnpaired marker",
+    "# END dotfiles loader`n# BEGIN dotfiles loader",
+    "# BEGIN dotfiles loader`n# BEGIN dotfiles loader`n# END dotfiles loader"
+)) {
+    $rejectedMalformedProfile = $false
+    try {
+        [void](Merge-PowerShellProfileLoader `
+            -CurrentProfile $malformedProfile -Loader $testLoader)
+    } catch {
+        $rejectedMalformedProfile = $true
+    }
+    if (-not $rejectedMalformedProfile) {
+        throw 'Malformed PowerShell loader markers must fail without replacing the profile.'
+    }
+}
+
 $wrapperPath = Join-Path $root 'run_onchange_after_10-install-windows-tools.cmd.tmpl'
 $renderedWrapper = & chezmoi execute-template --source $root `
     --config (Join-Path $root 'tests\fixtures\windows.toml') `

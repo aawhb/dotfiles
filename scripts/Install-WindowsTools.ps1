@@ -417,6 +417,51 @@ function Install-Codex {
         -Detail "$wingetFailure npm fallback was unavailable because npm is not installed."
 }
 
+function Merge-PowerShellProfileLoader {
+    param(
+        [Parameter(Mandatory)]
+        [AllowEmptyString()]
+        [string]$CurrentProfile,
+        [Parameter(Mandatory)]
+        [string]$Loader
+    )
+
+    $beginPattern = '(?m)^[\t ]*# BEGIN dotfiles loader[\t ]*(?=\r?$)'
+    $endPattern = '(?m)^[\t ]*# END dotfiles loader[\t ]*(?=\r?$)'
+    $beginMatches = [regex]::Matches($CurrentProfile, $beginPattern)
+    $endMatches = [regex]::Matches($CurrentProfile, $endPattern)
+    if ($beginMatches.Count -gt 1 -or $endMatches.Count -gt 1 -or
+        ($beginMatches.Count -eq 1) -ne ($endMatches.Count -eq 1)) {
+        throw 'The PowerShell profile has duplicate or unpaired dotfiles loader markers.'
+    }
+    if ($beginMatches.Count -eq 1 -and $beginMatches[0].Index -ge $endMatches[0].Index) {
+        throw 'The PowerShell profile dotfiles loader markers are out of order.'
+    }
+
+    $newlineMatch = [regex]::Match($CurrentProfile, "`r`n|`n|`r")
+    $newline = if ($newlineMatch.Success) {
+        $newlineMatch.Value
+    } else {
+        [Environment]::NewLine
+    }
+    $normalizedLoader = $Loader -replace "`r`n|`n|`r", $newline
+
+    if ($beginMatches.Count -eq 1) {
+        $prefix = $CurrentProfile.Substring(0, $beginMatches[0].Index)
+        $suffixStart = $endMatches[0].Index + $endMatches[0].Length
+        $suffix = $CurrentProfile.Substring($suffixStart)
+        return $prefix + $normalizedLoader + $suffix
+    }
+
+    if (-not $CurrentProfile) {
+        return $normalizedLoader
+    }
+    if ($CurrentProfile -match '(?:\r\n|\n|\r)$') {
+        return $CurrentProfile + $normalizedLoader
+    }
+    return $CurrentProfile + $newline + $normalizedLoader
+}
+
 function Install-PowerShellLoader {
     if (-not (Test-PowerShell7)) {
         return New-InstallResult -Tool 'PowerShell 7 profile' -Status 'skipped' `
@@ -442,13 +487,16 @@ if (Test-Path -LiteralPath $managedProfile -PathType Leaf) {
         } else {
             ''
         }
-        if ($current -ceq $loader) {
+        $mergedProfile = Merge-PowerShellProfileLoader `
+            -CurrentProfile $current -Loader $loader
+        if ($current -ceq $mergedProfile) {
             return New-InstallResult -Tool 'PowerShell 7 profile' -Status 'available' `
                 -Detail $targetProfile
         }
         New-Item -ItemType Directory -Path (Split-Path -Parent $targetProfile) -Force |
             Out-Null
-        Set-Content -LiteralPath $targetProfile -Value $loader -NoNewline -Encoding UTF8
+        Set-Content -LiteralPath $targetProfile -Value $mergedProfile `
+            -NoNewline -Encoding UTF8
         return New-InstallResult -Tool 'PowerShell 7 profile' -Status 'installed' `
             -Detail $targetProfile
     } catch {
