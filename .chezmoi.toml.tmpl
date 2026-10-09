@@ -1,12 +1,13 @@
 {{- $profile := promptChoiceOnce . "profile" "Device trust profile" (list "work" "personal") "work" -}}
-{{- $windowsChoices := list "powershell" "oh-my-posh" "atuin" "zoxide" "just" "fzf" "vscode" "codex" "obsidian" "uv" "azure-cli" "nvm-node-lts" -}}
-{{- $linuxChoices := list "blesh" "atuin" "oh-my-posh" "zoxide" "just" -}}
+{{- $windowsChoices := list "powershell" "oh-my-posh" "atuin" "zoxide" "just" "fzf" "vscode" "codex" "obsidian" "uv" "azure-cli" "nvm-node-lts" "herdr" "github-cli" "bitwarden-cli" "tailscale" -}}
+{{- $linuxChoices := list "blesh" "atuin" "oh-my-posh" "zoxide" "just" "herdr" "bitwarden-cli" "tailscale" -}}
+{{- $linuxDefaults := list "blesh" "atuin" "oh-my-posh" "zoxide" "just" -}}
 {{- $windowsTools := list -}}
 {{- $linuxTools := list -}}
 {{- if eq .chezmoi.os "windows" -}}
 {{-   $windowsTools = promptMultichoiceOnce . "windowsTools" "Select Windows tools (space toggles, enter confirms)" $windowsChoices (list "powershell") -}}
 {{- else if eq .chezmoi.os "linux" -}}
-{{-   $linuxTools = promptMultichoiceOnce . "linuxTools" "Select Linux shell tools (space toggles, enter confirms)" $linuxChoices $linuxChoices -}}
+{{-   $linuxTools = promptMultichoiceOnce . "linuxTools" "Select Linux tools (space toggles, enter confirms)" $linuxChoices $linuxDefaults -}}
 {{- end -}}
 {{- $gitName := promptStringOnce . "gitName" "Git author name" -}}
 {{- $gitEmail := promptStringOnce . "gitEmail" "Git author email" -}}

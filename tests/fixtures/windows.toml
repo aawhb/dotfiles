@@ -1,6 +1,6 @@
 [data]
 profile = "work"
-windowsTools = ["powershell", "atuin", "codex", "nvm-node-lts"]
+windowsTools = ["powershell", "atuin", "codex", "nvm-node-lts", "herdr", "github-cli", "bitwarden-cli", "tailscale"]
 linuxTools = []
 gitName = "Test User"
 gitEmail = "test@example.com"

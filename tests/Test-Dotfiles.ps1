@@ -49,17 +49,27 @@ foreach ($required in @(
         throw "Recovery helper is missing: $required"
     }
 }
-
 $configTemplate = Get-Content -LiteralPath (Join-Path $root '.chezmoi.toml.tmpl') -Raw
 foreach ($required in @(
     'promptMultichoiceOnce',
     'windowsTools',
     'linuxTools',
-    'nvm-node-lts'
+    'nvm-node-lts',
+    'herdr',
+    'github-cli',
+    'bitwarden-cli',
+    'tailscale'
 )) {
     if (-not $configTemplate.Contains($required)) {
         throw "Chezmoi config template is missing: $required"
     }
+}
+if (-not $configTemplate.Contains('$windowsChoices (list "powershell")')) {
+    throw 'Windows optional tools must remain unselected by default.'
+}
+if (-not $configTemplate.Contains(
+    '$linuxDefaults := list "blesh" "atuin" "oh-my-posh" "zoxide" "just"')) {
+    throw 'Linux optional tools must remain unselected by default.'
 }
 
 $windowsInstaller = Get-Content -LiteralPath (
@@ -77,6 +87,10 @@ foreach ($required in @(
     "'astral-sh.uv'",
     "'Microsoft.AzureCLI'",
     "'CoreyButler.NVMforWindows'",
+    "'Herdr.Herdr.Preview'",
+    "'GitHub.cli'",
+    "'Bitwarden.CLI'",
+    "'Tailscale.Tailscale'",
     'nvm install lts',
     'npm install --global',
     'Windows tool setup summary',
@@ -93,6 +107,65 @@ if ($windowsInstaller.Contains('Set-ExecutionPolicy')) {
 if ($windowsInstaller.Contains('--scope user')) {
     throw 'Windows installer must let Winget choose the applicable scope.'
 }
+if ($windowsInstaller.Contains(".local\state\dotfiles\backups")) {
+    throw 'The Windows installer must not accumulate profile-loader backups.'
+}
+
+$installerAst = [Management.Automation.Language.Parser]::ParseFile(
+    (Join-Path $root 'scripts\Install-WindowsTools.ps1'), [ref]$tokens, [ref]$errors)
+$mergeFunctionAst = $installerAst.Find({
+    param($node)
+    $node -is [Management.Automation.Language.FunctionDefinitionAst] -and
+    $node.Name -eq 'Merge-PowerShellProfileLoader'
+}, $true)
+if (-not $mergeFunctionAst) {
+    throw 'The Windows installer is missing its profile loader merge function.'
+}
+. ([scriptblock]::Create($mergeFunctionAst.Extent.Text))
+
+$testLoader = @(
+    '# BEGIN dotfiles loader',
+    '$managedProfile = "managed profile"',
+    '# END dotfiles loader'
+) -join "`n"
+$expectedTestLoader = $testLoader -replace "`r`n|`n|`r", "`r`n"
+$profileBefore = "Personal setup before`r`n"
+$profileAfter = "`r`nPersonal setup after`r`n"
+$profileWithLoader = $profileBefore +
+    "# BEGIN dotfiles loader`r`nOld loader`r`n# END dotfiles loader" +
+    $profileAfter
+$mergedProfile = Merge-PowerShellProfileLoader `
+    -CurrentProfile $profileWithLoader -Loader $testLoader
+$expectedProfile = $profileBefore + $expectedTestLoader + $profileAfter
+if ($mergedProfile -cne $expectedProfile) {
+    throw 'Updating the PowerShell loader did not preserve surrounding profile text.'
+}
+$appendedProfile = Merge-PowerShellProfileLoader `
+    -CurrentProfile "Personal setup before`r`n" -Loader $testLoader
+if ($appendedProfile -cne "Personal setup before`r`n$expectedTestLoader") {
+    throw 'The PowerShell loader was not appended after existing profile text.'
+}
+if ((Merge-PowerShellProfileLoader -CurrentProfile $appendedProfile `
+        -Loader $testLoader) -cne $appendedProfile) {
+    throw 'The PowerShell loader merge is not idempotent.'
+}
+foreach ($malformedProfile in @(
+    "# BEGIN dotfiles loader`nUnpaired marker",
+    "# END dotfiles loader`nUnpaired marker",
+    "# END dotfiles loader`n# BEGIN dotfiles loader",
+    "# BEGIN dotfiles loader`n# BEGIN dotfiles loader`n# END dotfiles loader"
+)) {
+    $rejectedMalformedProfile = $false
+    try {
+        [void](Merge-PowerShellProfileLoader `
+            -CurrentProfile $malformedProfile -Loader $testLoader)
+    } catch {
+        $rejectedMalformedProfile = $true
+    }
+    if (-not $rejectedMalformedProfile) {
+        throw 'Malformed PowerShell loader markers must fail without replacing the profile.'
+    }
+}
 
 $wrapperPath = Join-Path $root 'run_onchange_after_10-install-windows-tools.cmd.tmpl'
 $renderedWrapper = & chezmoi execute-template --source $root `
@@ -103,7 +176,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 foreach ($required in @(
     '-ExecutionPolicy Bypass',
-    'powershell,atuin,codex,nvm-node-lts',
+    'powershell,atuin,codex,nvm-node-lts,herdr,github-cli,bitwarden-cli,tailscale',
     'scripts\Install-WindowsTools.ps1'
 )) {
     if (-not (($renderedWrapper -join "`n").Contains($required))) {
@@ -129,11 +202,18 @@ foreach ($required in @(
     'install_file_binary oh-my-posh',
     'install_archive_binary zoxide',
     'install_archive_binary just',
+    'install_file_binary herdr 0.9.1',
+    'install_zip_binary bitwarden-cli 2026.7.0',
+    'install_tailscale',
+    'https://tailscale.com/install.sh',
     'Linux tool setup summary'
 )) {
     if (-not $renderedLinuxText.Contains($required)) {
         throw "Rendered Linux installer is missing: $required"
     }
+}
+if ($renderedLinuxText -match '(?m)^[\t ]*(sudo[\t ]+)?tailscale[\t ]+up') {
+    throw 'Linux tool installer must not enroll Tailscale automatically.'
 }
 
 $backupScript = Get-Content -LiteralPath (

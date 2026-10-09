@@ -87,11 +87,12 @@ install_file_binary() {
     local version=$2
     local url=$3
     local checksum=$4
-    local destination=$5
+    local version_argument=$5
+    local destination=$6
     local download=$tmp_root/$name
     local staged=$destination.new.$$
 
-    if [[ -x $destination ]] && "$destination" version 2>&1 | grep -Fq "$version"; then
+    if [[ -x $destination ]] && "$destination" "$version_argument" 2>&1 | grep -Fq "$version"; then
         record_result "$name" available "Version $version is already installed."
         return
     fi
@@ -104,7 +105,7 @@ install_file_binary() {
         record_result "$name" failed 'Could not install the verified binary.'
         return
     fi
-    if ! "$staged" version > /dev/null 2>&1; then
+    if ! "$staged" "$version_argument" > /dev/null 2>&1; then
         rm -f -- "$staged"
         record_result "$name" failed 'Installed binary did not pass its version check.'
         return
@@ -112,6 +113,58 @@ install_file_binary() {
     if ! mv -f -- "$staged" "$destination"; then
         rm -f -- "$staged"
         record_result "$name" failed 'Could not activate the verified binary.'
+        return
+    fi
+    record_result "$name" installed "Installed version $version."
+}
+
+install_zip_binary() {
+    local name=$1
+    local version=$2
+    local url=$3
+    local checksum=$4
+    local binary_name=$5
+    local destination=$6
+    local archive=$tmp_root/$name.zip
+    local extract_root=$tmp_root/$name-extract
+    local staged=$destination.new.$$
+    local source
+
+    if [[ -x $destination ]] && "$destination" --version 2>&1 | grep -Fq "$version"; then
+        record_result "$name" available "Version $version is already installed."
+        return
+    fi
+    if ! command -v unzip > /dev/null 2>&1; then
+        record_result "$name" failed 'Installation requires unzip.'
+        return
+    fi
+    mkdir -p "$extract_root"
+    if ! download_and_verify "$url" "$checksum" "$archive"; then
+        record_result "$name" failed 'Download or checksum verification failed.'
+        return
+    fi
+    if ! unzip -q "$archive" -d "$extract_root"; then
+        record_result "$name" failed 'Archive extraction failed.'
+        return
+    fi
+    source=$(find "$extract_root" -type f -name "$binary_name" -print -quit)
+    if [[ -z $source ]]; then
+        record_result "$name" failed "Archive did not contain $binary_name."
+        return
+    fi
+    mkdir -p "$(dirname "$destination")"
+    if ! install -m 0755 "$source" "$staged"; then
+        record_result "$name" failed 'Could not install the verified binary.'
+        return
+    fi
+    if ! "$staged" --version > /dev/null 2>&1; then
+        rm -f -- "$staged"
+        record_result "$name" failed 'Installed binary did not pass its version check.'
+        return
+    fi
+    if ! mv -f -- "$staged" "$destination"; then
+        rm -f -- "$staged"
+        record_result "$name" failed 'Could not activate the new binary.'
         return
     fi
     record_result "$name" installed "Installed version $version."
@@ -174,6 +227,38 @@ install_blesh() {
     record_result blesh installed "Installed version $version."
 }
 
+install_tailscale() {
+    local installer=$tmp_root/tailscale-install.sh
+
+    if command -v tailscale > /dev/null 2>&1; then
+        record_result tailscale available 'Tailscale is already installed.'
+        return
+    fi
+    if ! command -v curl > /dev/null 2>&1; then
+        record_result tailscale failed 'Installation requires curl.'
+        return
+    fi
+    if [[ $EUID -ne 0 ]] && ! command -v sudo > /dev/null 2>&1; then
+        record_result tailscale failed 'Installation requires sudo when not running as root.'
+        return
+    fi
+    if ! curl --fail --location --silent --show-error \
+        https://tailscale.com/install.sh --output "$installer"; then
+        record_result tailscale failed 'Could not download the official installer.'
+        return
+    fi
+    if ! sh "$installer"; then
+        record_result tailscale failed 'The official installer failed.'
+        return
+    fi
+    hash -r
+    if ! command -v tailscale > /dev/null 2>&1; then
+        record_result tailscale failed 'Installation did not expose the command.'
+        return
+    fi
+    record_result tailscale installed 'Installed Tailscale. Run tailscale up to enroll this machine.'
+}
+
 {{- if has "blesh" $linuxTools }}
 install_blesh
 {{- end }}
@@ -186,7 +271,7 @@ install_archive_binary atuin 18.19.0 \
 {{- if has "oh-my-posh" $linuxTools }}
 install_file_binary oh-my-posh 30.6.5 \
     https://github.com/JanDeDobbeleer/oh-my-posh/releases/download/v30.6.5/posh-linux-amd64 \
-    079febf68932744a6c8d05179a2798bca083613275eca6de41b1efe9c82e15c8 \
+    079febf68932744a6c8d05179a2798bca083613275eca6de41b1efe9c82e15c8 version \
     "$HOME/.local/bin/oh-my-posh"
 {{- end }}
 {{- if has "zoxide" $linuxTools }}
@@ -200,6 +285,21 @@ install_archive_binary just 1.58.0 \
     https://github.com/casey/just/releases/download/1.58.0/just-1.58.0-x86_64-unknown-linux-musl.tar.gz \
     4a5cc2f53e6f0f8c59092a6cc38291eb729d46a7dd95d3ae582008881b84931d \
     just "$HOME/.local/bin/just"
+{{- end }}
+{{- if has "herdr" $linuxTools }}
+install_file_binary herdr 0.9.1 \
+    https://github.com/herdrdev/herdr/releases/download/v0.9.1/herdr-linux-x86_64 \
+    2a02fed16beb651ef006e1d43f048f652ca4dc58ad053cd2d44450563d5c54b7 --version \
+    "$HOME/.local/bin/herdr"
+{{- end }}
+{{- if has "bitwarden-cli" $linuxTools }}
+install_zip_binary bitwarden-cli 2026.7.0 \
+    https://github.com/bitwarden/clients/releases/download/cli-v2026.7.0/bw-linux-2026.7.0.zip \
+    7a35145e205952f7434d2370da359543145ae0c45ba1af0fe9bdd99d40a00180 \
+    bw "$HOME/.local/bin/bw"
+{{- end }}
+{{- if has "tailscale" $linuxTools }}
+install_tailscale
 {{- end }}
 
 printf '\nLinux tool setup summary:\n'

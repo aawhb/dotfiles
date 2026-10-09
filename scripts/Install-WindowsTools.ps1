@@ -278,6 +278,22 @@ $definitions = @{
         Label = 'NVM and Node.js LTS'; Id = 'CoreyButler.NVMforWindows'; Command = 'nvm'
         Arguments = @('version'); Prefix = 'CoreyButler.NVMforWindows_'
     }
+    'herdr' = @{
+        Label = 'Herdr'; Id = 'Herdr.Herdr.Preview'; Command = 'herdr'
+        Arguments = @('--version'); Prefix = 'Herdr.Herdr.Preview_'
+    }
+    'github-cli' = @{
+        Label = 'GitHub CLI'; Id = 'GitHub.cli'; Command = 'gh'
+        Arguments = @('--version'); Prefix = 'GitHub.cli_'
+    }
+    'bitwarden-cli' = @{
+        Label = 'Bitwarden CLI'; Id = 'Bitwarden.CLI'; Command = 'bw'
+        Arguments = @('--version'); Prefix = 'Bitwarden.CLI_'
+    }
+    'tailscale' = @{
+        Label = 'Tailscale'; Id = 'Tailscale.Tailscale'; Command = 'tailscale'
+        Arguments = @('version'); Prefix = 'Tailscale.Tailscale_'
+    }
 }
 
 function Test-Tool {
@@ -286,7 +302,7 @@ function Test-Tool {
     if ($Key -eq 'powershell') {
         return Test-PowerShell7
     }
-    if ($Key -eq 'obsidian') {
+    if ($Key -in @('obsidian', 'herdr')) {
         return Test-WingetPackage -Id $definitions[$Key].Id
     }
     if ($Key -eq 'nvm-node-lts') {
@@ -401,6 +417,51 @@ function Install-Codex {
         -Detail "$wingetFailure npm fallback was unavailable because npm is not installed."
 }
 
+function Merge-PowerShellProfileLoader {
+    param(
+        [Parameter(Mandatory)]
+        [AllowEmptyString()]
+        [string]$CurrentProfile,
+        [Parameter(Mandatory)]
+        [string]$Loader
+    )
+
+    $beginPattern = '(?m)^[\t ]*# BEGIN dotfiles loader[\t ]*(?=\r?$)'
+    $endPattern = '(?m)^[\t ]*# END dotfiles loader[\t ]*(?=\r?$)'
+    $beginMatches = [regex]::Matches($CurrentProfile, $beginPattern)
+    $endMatches = [regex]::Matches($CurrentProfile, $endPattern)
+    if ($beginMatches.Count -gt 1 -or $endMatches.Count -gt 1 -or
+        ($beginMatches.Count -eq 1) -ne ($endMatches.Count -eq 1)) {
+        throw 'The PowerShell profile has duplicate or unpaired dotfiles loader markers.'
+    }
+    if ($beginMatches.Count -eq 1 -and $beginMatches[0].Index -ge $endMatches[0].Index) {
+        throw 'The PowerShell profile dotfiles loader markers are out of order.'
+    }
+
+    $newlineMatch = [regex]::Match($CurrentProfile, "`r`n|`n|`r")
+    $newline = if ($newlineMatch.Success) {
+        $newlineMatch.Value
+    } else {
+        [Environment]::NewLine
+    }
+    $normalizedLoader = $Loader -replace "`r`n|`n|`r", $newline
+
+    if ($beginMatches.Count -eq 1) {
+        $prefix = $CurrentProfile.Substring(0, $beginMatches[0].Index)
+        $suffixStart = $endMatches[0].Index + $endMatches[0].Length
+        $suffix = $CurrentProfile.Substring($suffixStart)
+        return $prefix + $normalizedLoader + $suffix
+    }
+
+    if (-not $CurrentProfile) {
+        return $normalizedLoader
+    }
+    if ($CurrentProfile -match '(?:\r\n|\n|\r)$') {
+        return $CurrentProfile + $normalizedLoader
+    }
+    return $CurrentProfile + $newline + $normalizedLoader
+}
+
 function Install-PowerShellLoader {
     if (-not (Test-PowerShell7)) {
         return New-InstallResult -Tool 'PowerShell 7 profile' -Status 'skipped' `
@@ -426,19 +487,16 @@ if (Test-Path -LiteralPath $managedProfile -PathType Leaf) {
         } else {
             ''
         }
-        if ($current -ceq $loader) {
+        $mergedProfile = Merge-PowerShellProfileLoader `
+            -CurrentProfile $current -Loader $loader
+        if ($current -ceq $mergedProfile) {
             return New-InstallResult -Tool 'PowerShell 7 profile' -Status 'available' `
                 -Detail $targetProfile
         }
-        if ($current) {
-            $backupRoot = Join-Path $HOME '.local\state\dotfiles\backups'
-            $backup = Join-Path $backupRoot (Get-Date -Format 'yyyyMMdd-HHmmss')
-            New-Item -ItemType Directory -Path $backup -Force | Out-Null
-            Copy-Item -LiteralPath $targetProfile -Destination $backup
-        }
         New-Item -ItemType Directory -Path (Split-Path -Parent $targetProfile) -Force |
             Out-Null
-        Set-Content -LiteralPath $targetProfile -Value $loader -NoNewline -Encoding UTF8
+        Set-Content -LiteralPath $targetProfile -Value $mergedProfile `
+            -NoNewline -Encoding UTF8
         return New-InstallResult -Tool 'PowerShell 7 profile' -Status 'installed' `
             -Detail $targetProfile
     } catch {
@@ -484,7 +542,8 @@ if ($PSVersionTable.PSEdition -ne 'Core' -and 'powershell' -in $selectedTools) {
 
 $installOrder = @(
     'powershell', 'nvm-node-lts', 'oh-my-posh', 'atuin', 'zoxide', 'just',
-    'fzf', 'vscode', 'obsidian', 'uv', 'azure-cli', 'codex'
+    'fzf', 'vscode', 'obsidian', 'uv', 'azure-cli', 'codex', 'herdr',
+    'github-cli', 'bitwarden-cli', 'tailscale'
 )
 foreach ($key in $installOrder) {
     if ($key -notin $selectedTools) {

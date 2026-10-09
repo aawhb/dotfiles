@@ -26,6 +26,21 @@ grep -Fq 'Linux tool setup summary' \
     "$root/run_onchange_after_10-install-linux-tools.sh.tmpl"
 grep -Fq 'failures=$((failures + 1))' \
     "$root/run_onchange_after_10-install-linux-tools.sh.tmpl"
+grep -Fq 'install_file_binary herdr 0.9.1' \
+    "$root/run_onchange_after_10-install-linux-tools.sh.tmpl"
+grep -Fq 'install_zip_binary bitwarden-cli 2026.7.0' \
+    "$root/run_onchange_after_10-install-linux-tools.sh.tmpl"
+grep -Fq 'https://tailscale.com/install.sh' \
+    "$root/run_onchange_after_10-install-linux-tools.sh.tmpl"
+grep -Fq "'Herdr.Herdr.Preview'" \
+    "$root/scripts/Install-WindowsTools.ps1"
+grep -Fq "'Bitwarden.CLI'" "$root/scripts/Install-WindowsTools.ps1"
+grep -Fq "'Tailscale.Tailscale'" "$root/scripts/Install-WindowsTools.ps1"
+if grep -Eq '^[[:space:]]*(sudo[[:space:]]+)?tailscale[[:space:]]+up' \
+    "$rendered_linux_installer"; then
+    echo "The Linux tool installer must not enroll Tailscale automatically." >&2
+    exit 1
+fi
 
 test -f "$root/private_dot_ssh/modify_private_config"
 test -f "$root/private_dot_ssh/private_config.d/private_00-dotfiles.conf"
