@@ -92,6 +92,11 @@ Posh, zoxide, and just. Herdr, Bitwarden CLI, and Tailscale are additional
 opt-in choices. Re-run `chezmoi init --prompt` to change selections. Deselecting
 a tool prevents future install attempts but does not uninstall it.
 
+VS Code, Obsidian, and Tailscale package installation is optional for standalone
+devices. On an Ops-managed host, leave a package unselected when its workstation
+profile declares it. Ops owns that package installation even when Winget uses
+user scope; dotfiles owns per-user settings and preferences.
+
 Windows installations use exact Winget package IDs and verify each CLI from a
 fresh PowerShell process. The installer refreshes environment variables and
 repairs the user `PATH` from known package locations when needed. NVM installs
