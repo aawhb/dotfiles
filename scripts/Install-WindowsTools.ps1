@@ -266,6 +266,38 @@ $definitions = @{
         Label = 'Obsidian'; Id = 'Obsidian.Obsidian'; Command = ''
         Arguments = @(); Prefix = 'Obsidian.Obsidian_'
     }
+    'notepad-plus-plus' = @{
+        Label = 'Notepad++'; Id = 'Notepad++.Notepad++'; Command = ''
+        Arguments = @(); Prefix = 'Notepad++.Notepad++_'
+    }
+    'lm-studio' = @{
+        Label = 'LM Studio'; Id = 'ElementLabs.LMStudio'; Command = ''
+        Arguments = @(); Prefix = 'ElementLabs.LMStudio_'
+    }
+    'k-lite-codec-pack-mega' = @{
+        Label = 'K-Lite Codec Pack Mega'; Id = 'CodecGuide.K-LiteCodecPack.Mega'; Command = ''
+        Arguments = @(); Prefix = 'CodecGuide.K-LiteCodecPack.Mega_'
+    }
+    'windhawk' = @{
+        Label = 'Windhawk'; Id = 'RamenSoftware.Windhawk'; Command = ''
+        Arguments = @(); Prefix = 'RamenSoftware.Windhawk_'
+    }
+    'powertoys' = @{
+        Label = 'PowerToys'; Id = 'Microsoft.PowerToys'; Command = ''
+        Arguments = @(); Prefix = 'Microsoft.PowerToys_'
+    }
+    'zoom' = @{
+        Label = 'Zoom Workplace'; Id = 'Zoom.Zoom.EXE'; Command = ''
+        Arguments = @(); Prefix = 'Zoom.Zoom.EXE_'
+    }
+    'teams' = @{
+        Label = 'Microsoft Teams'; Id = 'Microsoft.Teams'; Command = ''
+        Arguments = @(); Prefix = 'Microsoft.Teams_'
+    }
+    'nanazip' = @{
+        Label = 'NanaZip'; Id = 'M2Team.NanaZip'; Command = ''
+        Arguments = @(); Prefix = 'M2Team.NanaZip_'
+    }
     'uv' = @{
         Label = 'uv'; Id = 'astral-sh.uv'; Command = 'uv'
         Arguments = @('--version'); Prefix = 'astral-sh.uv_'
@@ -302,15 +334,15 @@ function Test-Tool {
     if ($Key -eq 'powershell') {
         return Test-PowerShell7
     }
-    if ($Key -in @('obsidian', 'herdr')) {
-        return Test-WingetPackage -Id $definitions[$Key].Id
+    $definition = $definitions[$Key]
+    if ($Key -eq 'herdr' -or -not $definition.Command) {
+        return Test-WingetPackage -Id $definition.Id
     }
     if ($Key -eq 'nvm-node-lts') {
         return (Invoke-CommandCheck -Command 'nvm' -Arguments @('version')) -and
             (Invoke-CommandCheck -Command 'node' -Arguments @('--version')) -and
             (Invoke-CommandCheck -Command 'npm' -Arguments @('--version'))
     }
-    $definition = $definitions[$Key]
     return Invoke-CommandCheck -Command $definition.Command -Arguments $definition.Arguments
 }
 

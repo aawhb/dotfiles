@@ -36,6 +36,11 @@ grep -Fq "'Herdr.Herdr.Preview'" \
     "$root/scripts/Install-WindowsTools.ps1"
 grep -Fq "'Bitwarden.CLI'" "$root/scripts/Install-WindowsTools.ps1"
 grep -Fq "'Tailscale.Tailscale'" "$root/scripts/Install-WindowsTools.ps1"
+for package_id in 'Notepad++.Notepad++' 'ElementLabs.LMStudio' \
+    'CodecGuide.K-LiteCodecPack.Mega' 'RamenSoftware.Windhawk' \
+    'Microsoft.PowerToys' 'Zoom.Zoom.EXE' 'Microsoft.Teams' 'M2Team.NanaZip'; do
+    grep -Fq "'$package_id'" "$root/scripts/Install-WindowsTools.ps1"
+done
 if grep -Eq '^[[:space:]]*(sudo[[:space:]]+)?tailscale[[:space:]]+up' \
     "$rendered_linux_installer"; then
     echo "The Linux tool installer must not enroll Tailscale automatically." >&2

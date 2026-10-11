@@ -81,21 +81,25 @@ to install. Press Space to toggle an item and Enter to confirm the selection.
 Single-choice prompts, such as `work` versus `personal`, accept a matching key
 immediately; they are selectors rather than free-text fields.
 
-PowerShell 7 is the only default Windows selection. If a managed PowerShell 7 is
-already available, the installer uses it instead of reinstalling or changing its
-scope. Git is a machine prerequisite and is not installed or managed by this
-repository. The remaining Windows
-choices are Oh My Posh, Atuin, zoxide, just, fzf, VS Code, Codex CLI, Obsidian,
-uv, Azure CLI, NVM for Windows with Node.js LTS, Herdr, GitHub CLI, Bitwarden
-CLI, and Tailscale. Linux defaults to the five shell tools ble.sh, Atuin, Oh My
-Posh, zoxide, and just. Herdr, Bitwarden CLI, and Tailscale are additional
-opt-in choices. Re-run `chezmoi init --prompt` to change selections. Deselecting
-a tool prevents future install attempts but does not uninstall it.
+On standalone Windows devices, PowerShell 7 is the default selection. Ops owns
+PowerShell 7, Git, and Tailscale on lab-managed machines; deselect PowerShell 7
+and Tailscale there. Git is a prerequisite and is not installed or managed by
+this repository. The remaining Windows
+choices include Oh My Posh, Atuin, zoxide, just, fzf, VS Code, Codex CLI,
+Obsidian, Notepad++, LM Studio, K-Lite Codec Pack Mega, Windhawk, PowerToys,
+Zoom, Teams, NanaZip, uv, Azure CLI, NVM for Windows with Node.js LTS, Herdr,
+GitHub CLI, Bitwarden CLI, and Tailscale. Linux defaults to the five shell tools
+ble.sh, Atuin, Oh My Posh, zoxide, and just. Herdr, Bitwarden CLI, and Tailscale
+are additional opt-in choices. Re-run `chezmoi init --prompt` to change
+selections. Deselecting a tool prevents future install attempts but does not
+uninstall it.
 
-VS Code, Obsidian, and Tailscale package installation is optional for standalone
-devices. On an Ops-managed host, leave a package unselected when its workstation
-profile declares it. Ops owns that package installation even when Winget uses
-user scope; dotfiles owns per-user settings and preferences.
+Dotfiles owns the user tools and applications selected here on both standalone
+and Ops-managed devices, including editors, their installation, and per-user
+settings. Ops workstation profiles should not separately declare those user
+applications. VS Code and Obsidian remain optional selections on managed or
+standalone Windows devices. PowerShell 7 and Tailscale are optional standalone
+bootstraps; Ops owns their managed installation.
 
 Windows installations use exact Winget package IDs and verify each CLI from a
 fresh PowerShell process. The installer refreshes environment variables and
@@ -115,11 +119,10 @@ winget upgrade --id Herdr.Herdr.Preview --exact --source winget
 Do not run `herdr update` for the Winget installation. That command is for
 Herdr's direct installer and creates a separate standalone installation.
 
-Bitwarden CLI and Tailscale install only their generic clients when selected.
-The installer does not authenticate Bitwarden or enroll the machine in a
-Tailnet. Tailscale is opt-in on Linux, where its official system-package
-installer may prompt for `sudo`. Managed lab hosts should use the lab's machine
-configuration for Tailscale; dotfiles selection supports standalone machines.
+Bitwarden CLI installs only its generic client when selected. The optional
+standalone Tailscale bootstrap installs only its generic client and does not
+enroll the machine in a Tailnet. Its Linux system-package installer may prompt
+for `sudo`.
 
 Linux tools use the checksum-pinned upstream releases stored in this repository
 and install under `~/.local`. Both platform installers continue after an
