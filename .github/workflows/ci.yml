@@ -28,4 +28,12 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      - name: Install chezmoi
+        shell: bash
+        run: |
+          version="$(tr -d '\r\n' < .chezmoiversion)"
+          bin_dir="$RUNNER_TEMP/chezmoi-bin"
+          mkdir -p "$bin_dir"
+          sh -c "$(curl -fsLS https://get.chezmoi.io)" -- -b "$bin_dir" -t "v$version"
+          echo "$bin_dir" >> "$GITHUB_PATH"
       - run: bash tests/test-dotfiles.sh

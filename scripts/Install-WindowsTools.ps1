@@ -6,6 +6,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'WindowsToolDefinitions.ps1')
 
 function New-InstallResult {
     param(
@@ -203,17 +204,6 @@ function Test-PowerShell7 {
     }
 }
 
-function Test-WingetPackage {
-    param([string]$Id)
-
-    if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
-        return $false
-    }
-    $global:LASTEXITCODE = 0
-    & winget list --id $Id --exact --source winget --accept-source-agreements *> $null
-    return $LASTEXITCODE -eq 0
-}
-
 function Install-WingetPackage {
     param([string]$Id)
 
@@ -228,105 +218,7 @@ function Install-WingetPackage {
     }
 }
 
-$definitions = @{
-    'powershell' = @{
-        Label = 'PowerShell 7'; Id = 'Microsoft.PowerShell'; Command = 'pwsh'
-        Arguments = @('-NoLogo', '-NoProfile', '-Command', '$PSVersionTable.PSEdition')
-        Prefix = 'Microsoft.PowerShell_'
-    }
-    'oh-my-posh' = @{
-        Label = 'Oh My Posh'; Id = 'JanDeDobbeleer.OhMyPosh'; Command = 'oh-my-posh'
-        Arguments = @('version'); Prefix = 'JanDeDobbeleer.OhMyPosh_'
-    }
-    'atuin' = @{
-        Label = 'Atuin'; Id = 'Atuinsh.Atuin'; Command = 'atuin'
-        Arguments = @('--version'); Prefix = 'Atuinsh.Atuin_'
-    }
-    'zoxide' = @{
-        Label = 'zoxide'; Id = 'ajeetdsouza.zoxide'; Command = 'zoxide'
-        Arguments = @('--version'); Prefix = 'ajeetdsouza.zoxide_'
-    }
-    'just' = @{
-        Label = 'just'; Id = 'Casey.Just'; Command = 'just'
-        Arguments = @('--version'); Prefix = 'Casey.Just_'
-    }
-    'fzf' = @{
-        Label = 'fzf'; Id = 'junegunn.fzf'; Command = 'fzf'
-        Arguments = @('--version'); Prefix = 'junegunn.fzf_'
-    }
-    'vscode' = @{
-        Label = 'Visual Studio Code'; Id = 'Microsoft.VisualStudioCode'; Command = 'code'
-        Arguments = @('--version'); Prefix = 'Microsoft.VisualStudioCode_'
-    }
-    'codex' = @{
-        Label = 'Codex CLI'; Id = 'OpenAI.Codex'; Command = 'codex'
-        Arguments = @('--version'); Prefix = 'OpenAI.Codex_'
-    }
-    'obsidian' = @{
-        Label = 'Obsidian'; Id = 'Obsidian.Obsidian'; Command = ''
-        Arguments = @(); Prefix = 'Obsidian.Obsidian_'
-    }
-    'notepad-plus-plus' = @{
-        Label = 'Notepad++'; Id = 'Notepad++.Notepad++'; Command = ''
-        Arguments = @(); Prefix = 'Notepad++.Notepad++_'
-    }
-    'lm-studio' = @{
-        Label = 'LM Studio'; Id = 'ElementLabs.LMStudio'; Command = ''
-        Arguments = @(); Prefix = 'ElementLabs.LMStudio_'
-    }
-    'k-lite-codec-pack-mega' = @{
-        Label = 'K-Lite Codec Pack Mega'; Id = 'CodecGuide.K-LiteCodecPack.Mega'; Command = ''
-        Arguments = @(); Prefix = 'CodecGuide.K-LiteCodecPack.Mega_'
-    }
-    'windhawk' = @{
-        Label = 'Windhawk'; Id = 'RamenSoftware.Windhawk'; Command = ''
-        Arguments = @(); Prefix = 'RamenSoftware.Windhawk_'
-    }
-    'powertoys' = @{
-        Label = 'PowerToys'; Id = 'Microsoft.PowerToys'; Command = ''
-        Arguments = @(); Prefix = 'Microsoft.PowerToys_'
-    }
-    'zoom' = @{
-        Label = 'Zoom Workplace'; Id = 'Zoom.Zoom.EXE'; Command = ''
-        Arguments = @(); Prefix = 'Zoom.Zoom.EXE_'
-    }
-    'teams' = @{
-        Label = 'Microsoft Teams'; Id = 'Microsoft.Teams'; Command = ''
-        Arguments = @(); Prefix = 'Microsoft.Teams_'
-    }
-    'nanazip' = @{
-        Label = 'NanaZip'; Id = 'M2Team.NanaZip'; Command = ''
-        Arguments = @(); Prefix = 'M2Team.NanaZip_'
-    }
-    'uv' = @{
-        Label = 'uv'; Id = 'astral-sh.uv'; Command = 'uv'
-        Arguments = @('--version'); Prefix = 'astral-sh.uv_'
-    }
-    'azure-cli' = @{
-        Label = 'Azure CLI'; Id = 'Microsoft.AzureCLI'; Command = 'az'
-        Arguments = @('version', '--output', 'json'); Prefix = 'Microsoft.AzureCLI_'
-    }
-    'nvm-node-lts' = @{
-        Label = 'NVM and Node.js LTS'; Id = 'CoreyButler.NVMforWindows'; Command = 'nvm'
-        Arguments = @('version'); Prefix = 'CoreyButler.NVMforWindows_'
-    }
-    'herdr' = @{
-        Label = 'Herdr'; Id = 'Herdr.Herdr.Preview'; Command = 'herdr'
-        Arguments = @('--version'); Prefix = 'Herdr.Herdr.Preview_'
-    }
-    'github-cli' = @{
-        Label = 'GitHub CLI'; Id = 'GitHub.cli'; Command = 'gh'
-        Arguments = @('--version'); Prefix = 'GitHub.cli_'
-    }
-    'bitwarden-cli' = @{
-        Label = 'Bitwarden CLI'; Id = 'Bitwarden.CLI'; Command = 'bw'
-        Arguments = @('--version'); Prefix = 'Bitwarden.CLI_'
-    }
-    'tailscale' = @{
-        Label = 'Tailscale'; Id = 'Tailscale.Tailscale'; Command = 'tailscale'
-        Arguments = @('version'); Prefix = 'Tailscale.Tailscale_'
-    }
-}
+$definitions = Get-WindowsToolDefinitions
 
 function Test-Tool {
     param([string]$Key)
@@ -350,11 +242,11 @@ function Install-GenericTool {
     param([string]$Key)
 
     $definition = $definitions[$Key]
-    if (Test-Tool -Key $Key) {
-        return New-InstallResult -Tool $definition.Label -Status 'available' `
-            -Detail 'Verification succeeded; no installation needed.'
-    }
     try {
+        if (Test-Tool -Key $Key) {
+            return New-InstallResult -Tool $definition.Label -Status 'available' `
+                -Detail 'Verification succeeded; no installation needed.'
+        }
         Install-WingetPackage -Id $definition.Id
         Refresh-ProcessEnvironment
         if ($definition.Command) {
@@ -572,11 +464,7 @@ if ($PSVersionTable.PSEdition -ne 'Core' -and 'powershell' -in $selectedTools) {
     }
 }
 
-$installOrder = @(
-    'powershell', 'nvm-node-lts', 'oh-my-posh', 'atuin', 'zoxide', 'just',
-    'fzf', 'vscode', 'obsidian', 'uv', 'azure-cli', 'codex', 'herdr',
-    'github-cli', 'bitwarden-cli', 'tailscale'
-)
+$installOrder = Get-WindowsToolInstallOrder -SelectedTools $selectedTools
 foreach ($key in $installOrder) {
     if ($key -notin $selectedTools) {
         continue
