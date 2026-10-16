@@ -161,7 +161,39 @@ Authentication remains native to each tool. Use browser or CLI login where
 needed, generate SSH keys on each device, and do not add histories, tokens,
 sessions, private keys, or command databases to this repository.
 
-### Update an existing installation
+### Update selected tools
+
+The update commands read the existing tool selections from `chezmoi data`. They
+preview by default, skip missing tools, and keep updates with the selected
+tool's current package owner. Review the preview before applying it.
+
+On Windows, run:
+
+```powershell
+$sourceDir = chezmoi source-path
+& pwsh -NoLogo -NoProfile -File (Join-Path $sourceDir 'scripts\Update-WindowsTools.ps1')
+& pwsh -NoLogo -NoProfile -File (Join-Path $sourceDir 'scripts\Update-WindowsTools.ps1') -Apply
+```
+
+Windows updates use an exact Winget package and scope. Codex follows the active
+Winget or global npm installation. If its source cannot be verified, the tool is
+skipped. NVM updates through Winget; Node.js LTS version changes remain a
+separate operation. PowerShell 7 and Tailscale remain optional standalone
+selections; deselect them on Ops-managed devices where Ops owns their updates.
+
+On Debian or Ubuntu, run:
+
+```bash
+bash "$(chezmoi source-path)/scripts/update-linux-tools.sh"
+bash "$(chezmoi source-path)/scripts/update-linux-tools.sh" --apply
+```
+
+Linux updates use the repository's checksum-pinned versions only for selected,
+active binaries under `~/.local`. They skip missing tools, system packages,
+Tailscale, and symlink-managed binaries such as mise installations. A binary
+newer than the repository pin is left in place.
+
+### Update an existing configuration
 
 When the configuration prompts or data keys change, pull the source without
 applying it, regenerate the configuration, and review the result:

@@ -3,6 +3,7 @@
 @echo off
 setlocal
 rem installer-sha256: {{ include "scripts/Install-WindowsTools.ps1" | sha256sum }}
+rem definitions-sha256: {{ include "scripts/WindowsToolDefinitions.ps1" | sha256sum }}
 set "DOTFILES_INSTALLER={{ joinPath .chezmoi.workingTree "scripts/Install-WindowsTools.ps1" }}"
 set "DOTFILES_TOOLS={{ join "," $windowsTools }}"
 
